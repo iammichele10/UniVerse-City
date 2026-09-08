@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Anyone can view uploaded images (they're embedded in a public blog)
+    match /posts/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email));
+    }
+  }
+}

@@ -1,0 +1,43 @@
+// Firestore data model for the student blog
+
+export type PostStatus = 'draft' | 'scheduled' | 'published';
+
+export interface Post {
+  id: string;              // Firestore doc id
+  title: string;
+  slug: string;            // URL-friendly, unique, used for /posts/[slug]
+  excerpt: string;         // short summary for cards/SEO
+  body: string;            // HTML from the rich text editor
+  coverImageUrl: string | null;
+  category: string;        // e.g. "Announcements", "Sports", "Academics"
+  tags: string[];
+  status: PostStatus;
+  publishAt: Date;         // when it should go live (also used for scheduling)
+  authorId: string;        // admin's uid
+  authorName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MediaItem {
+  id: string;
+  url: string;
+  path: string;            // storage path, needed for deletion
+  fileName: string;
+  uploadedBy: string;
+  createdAt: Date;
+}
+
+export interface AdminUser {
+  email: string;
+  displayName: string;
+  addedAt: Date;
+}
+
+// Single document at settings/site — edited from /admin/settings
+export interface SiteSettings {
+  siteName: string;
+  tagline: string;
+  estYear: string;
+  categories: string[]; // available options in the post editor + public nav
+}
