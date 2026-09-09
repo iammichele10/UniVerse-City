@@ -2,7 +2,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'UniVerse-City',
-  description: "The official student blog of UniVerse-City Academy",
+  description: "The official student blog of UniVerse-City",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
