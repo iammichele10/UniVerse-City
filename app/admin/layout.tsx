@@ -36,7 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-paper font-sans">
       <header className="flex flex-wrap items-center justify-between gap-y-2 border-b border-rule bg-paper-raised px-4 py-3 sm:px-6 sm:py-3.5">
-        <span className="text-sm font-semibold">The Young Voice — Admin</span>
+        <span className="text-sm font-semibold">UniVerse-City — Admin</span>
         <div className="flex items-center gap-2.5 text-sm text-muted sm:gap-3">
           <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-semibold text-white">
             {initials}
