@@ -1,10 +1,13 @@
-import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { uploadTeamImageToCloudinary } from '@/lib/cloudinary';
 
-export async function uploadTeamPhoto(file: File, memberId: string) {
-  const result = await uploadImageToCloudinary(file, {
-    folder: `student-blog/team/${memberId}`,
-    maxBytes: 5 * 1024 * 1024,
-  });
+export async function uploadTeamPhoto(
+  file: File,
+  memberId: string
+) {
+  const result = await uploadTeamImageToCloudinary(
+    file,
+    memberId
+  );
 
   return {
     url: result.secureUrl,
