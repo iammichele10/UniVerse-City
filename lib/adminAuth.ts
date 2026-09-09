@@ -1,6 +1,7 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore/lite';
 import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { db, auth, googleProvider } from './firebase';
+import { db } from './firebase';
+import { auth, googleProvider } from './firebaseAuth';
 
 export async function isEmailAdmin(email: string): Promise<boolean> {
   const ref = doc(db, 'admins', email);

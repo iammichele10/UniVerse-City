@@ -1,7 +1,7 @@
 import {
   collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, Timestamp, serverTimestamp,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import { db } from './firebase';
 import type { Post, PostStatus } from './types';
 

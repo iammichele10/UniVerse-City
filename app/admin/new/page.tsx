@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebaseAuth';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { createPost, updatePost, getPostById } from '@/lib/posts';
 import { getSettings } from '@/lib/settings';

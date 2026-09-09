@@ -18,9 +18,14 @@ function slugToCategory(slug: string, categories: string[]) {
   );
 }
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   const settings = await getSettings();
-  const category = slugToCategory(params.slug, settings.categories) ?? params.slug;
+  const category = slugToCategory(slug, settings.categories) ?? slug;
   const posts = await getPublishedPostsByCategory(category);
 
   return (

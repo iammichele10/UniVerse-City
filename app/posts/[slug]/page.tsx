@@ -6,8 +6,13 @@ import { formatDate } from '@/lib/date';
 
 export const revalidate = 60;
 
-export default async function PostPage({ params }: { params: { slug: string } }) {
-  const [post, settings] = await Promise.all([getPostBySlug(params.slug), getSettings()]);
+export default async function PostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const [post, settings] = await Promise.all([getPostBySlug(slug), getSettings()]);
   if (!post || post.status !== 'published') notFound();
 
   return (
