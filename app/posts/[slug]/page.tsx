@@ -1,10 +1,15 @@
 import { notFound } from 'next/navigation';
 import { getPostBySlug } from '@/lib/posts';
-import { getSettings } from '@/lib/settings';
-import { Masthead } from '@/lib/Masthead';
+import { Comments } from '@/lib/CommentsSection';
 import { formatDate } from '@/lib/date';
 
 export const revalidate = 60;
+
+// Same slugging rule used by Masthead.tsx and app/category/[slug]/page.tsx,
+// so "Back to <category>" lands on the matching category tab.
+function toSlug(cat: string) {
+  return cat.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
+}
 
 export default async function PostPage({
   params,
@@ -12,14 +17,15 @@ export default async function PostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [post, settings] = await Promise.all([getPostBySlug(slug), getSettings()]);
+  const post = await getPostBySlug(slug);
   if (!post || post.status !== 'published') notFound();
 
   return (
     <main className="mx-auto max-w-3xl">
-      <Masthead settings={settings} currentCategory={post.category} />
       <article className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-10">
-        <a href="/" className="mb-5 inline-block text-sm text-navy">← Back to all posts</a>
+        <a href={`/category/${toSlug(post.category)}`} className="mb-5 inline-block text-sm text-navy">
+          ← Back to {post.category}
+        </a>
         {post.coverImageUrl && (
           <div className="mb-6 flex h-52 w-full items-center justify-center overflow-hidden rounded-sm bg-[#F5F4F0] sm:h-80">
             <img src={post.coverImageUrl} alt={post.title} className="h-full w-full object-contain" />
@@ -45,6 +51,7 @@ export default async function PostPage({
             ))}
           </div>
         )}
+        <Comments postId={post.id} postSlug={post.slug} postTitle={post.title} />
       </article>
     </main>
   );

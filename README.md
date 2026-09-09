@@ -32,24 +32,24 @@ Firebase Storage is not used, since it now requires a paid Blaze plan.
    Paste your Firebase config values and your Cloudinary cloud name +
    upload preset name into `.env.local`.
 
-   Also fill in the server-only values in that file — your Cloudinary
-   **API Key** + **API Secret** (dashboard homepage, next to Cloud Name),
-   and a Firebase service account (**Project settings → Service accounts
-   → Generate new private key**). These power the admin-only route that
-   deletes a post's old cover image from Cloudinary when you replace it —
-   see `.env.local.example` for exactly which fields to copy where.
-
 6. **Whitelist yourself as the only admin:** in the Firestore console,
    create a collection named `admins`, and add a document whose ID is
    your exact Google account email (e.g. `you@gmail.com`). Any field
    inside it is fine — its existence is what grants access.
 
-7. **Deploy the Firestore security rules** (requires the Firebase CLI: `npm install -g firebase-tools`):
+7. **Deploy the Firestore security rules and indexes** (requires the Firebase CLI: `npm install -g firebase-tools`):
    ```
    firebase login
-   firebase init firestore   # point it at this project, keep default rules file name
-   firebase deploy --only firestore:rules
+   firebase init firestore   # point it at this project, keep default rules/indexes file names
+   firebase deploy --only firestore:rules,firestore:indexes
    ```
+   The indexes matter here, not just the rules: the public queries in
+   `lib/posts.ts` filter on `status` + `publishAt` (and `category` or
+   `slug`) together, which Firestore can't run without a matching
+   composite index. `firestore.indexes.json` in this repo defines the
+   ones it needs — if you skip deploying them, reads will fail with a
+   `failed-precondition` error asking you to build the index (the error
+   includes a direct console link if you'd rather create it that way).
 
 8. **Run it:**
    ```
@@ -70,12 +70,6 @@ Firebase Storage is not used, since it now requires a paid Blaze plan.
 - `app/page.tsx`, `app/posts/[slug]/page.tsx`, `app/category/[slug]/page.tsx` — public site
 - `app/admin/*` — login, dashboard, post editor (Tiptap), settings page
 - `app/api/revalidate/route.ts` — on-demand cache refresh on publish
-- `lib/firebaseAdmin.ts` / `lib/cloudinaryAdmin.ts` / `app/api/cloudinary/delete/route.ts`
-  — admin-only server route that deletes a post's old cover image from
-  Cloudinary when it's replaced in the editor, so it doesn't sit around
-  unused. (Only handles replacement — deleting a whole post doesn't yet
-  clean up its cover image; a matching `deletePost` cleanup would be a
-  natural follow-up if that turns out to matter.)
 
 ## Next steps worth doing
 - Add a Cloud Function if you want scheduled posts to flip to `published`

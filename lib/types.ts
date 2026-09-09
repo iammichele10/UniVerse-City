@@ -28,6 +28,22 @@ export interface MediaItem {
   createdAt: Date;
 }
 
+// A single comment on a post, at collection `comments`.
+// postId/postSlug/postTitle are stored on the comment itself (denormalized)
+// so the post page can query by postId, and the admin moderation page can
+// list every comment site-wide without a separate lookup per post.
+export interface Comment {
+  id: string;
+  postId: string;
+  postSlug: string;
+  postTitle: string;
+  authorUid: string;
+  authorName: string;
+  authorPhotoURL: string | null;
+  text: string;
+  createdAt: Date;
+}
+
 export interface AdminUser {
   email: string;
   displayName: string;

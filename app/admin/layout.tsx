@@ -42,6 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {initials}
           </div>
           <span className="hidden sm:inline">{user?.email}</span>
+          <a href="/admin/comments" className="whitespace-nowrap text-navy underline">Comments</a>
           <a href="/admin/settings" className="whitespace-nowrap text-navy underline">Settings</a>
           <button
             onClick={() => signOutAdmin().then(() => router.push('/admin/login'))}

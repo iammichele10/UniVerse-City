@@ -33,3 +33,20 @@ export function formatDate(
   if (!d) return fallback;
   return d.toLocaleDateString('en-US', options);
 }
+
+/** "2h ago" / "3d ago" style formatting, for comments. Falls back to a
+ * short date once it's more than a week old, and to `fallback` if the
+ * value isn't resolvable yet (e.g. serverTimestamp() hasn't synced locally). */
+export function formatRelativeTime(value: unknown, fallback = 'just now'): string {
+  const d = toDate(value);
+  if (!d) return fallback;
+  const seconds = Math.round((Date.now() - d.getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
