@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/date';
 
 // Backstop cache; actual freshness comes from on-demand revalidation
 // triggered the moment a post is published (see app/api/revalidate/route.ts).
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const [posts, settings] = await Promise.all([getPublishedPosts(), getSettings()]);

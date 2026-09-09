@@ -51,9 +51,19 @@ export interface AdminUser {
 }
 
 // Single document at settings/site — edited from /admin/settings
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  photoUrl: string | null;
+  photoPath: string | null;
+}
+
 export interface SiteSettings {
   siteName: string;
   tagline: string;
   estYear: string;
   categories: string[]; // available options in the post editor + public nav
+  aboutIntro: string;
+  team: TeamMember[];
 }

@@ -3,7 +3,7 @@ import { getPublishedPostsByCategory } from '@/lib/posts';
 import { getSettings } from '@/lib/settings';
 import { Masthead } from '@/lib/Masthead';
 
-export const revalidate = 60; // backstop; publish also triggers on-demand revalidation
+export const dynamic = 'force-dynamic'; // backstop; publish also triggers on-demand revalidation
 
 export async function generateStaticParams() {
   const settings = await getSettings();
