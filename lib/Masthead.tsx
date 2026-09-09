@@ -18,7 +18,7 @@ export function Masthead({
 }) {
   return (
     <header className="border-b-[3px] border-double border-ink px-4 pb-4 pt-6 text-center sm:px-6 sm:pt-8">
-      <Link href="/" className="mx-auto mb-3 block h-16 sm:h-20">
+      <Link href="/" className="mx-auto mb-3 flex h-16 w-fit justify-center sm:h-20">
         <img src="/logo.png" alt={settings.siteName} className="h-full w-auto object-contain" />
       </Link>
       <div className="mb-2 text-xs tracking-wide text-muted">
@@ -34,7 +34,7 @@ export function Masthead({
         <nav className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-rule pt-3 text-sm">
           <Link
             href="/"
-            className={`pb-0.5 ${!currentCategory ? 'border-b-2 border-brass' : ''}`}
+            className={`pb-0.5 ${!currentCategory && !currentPage ? 'border-b-2 border-brass' : ''}`}
           >
             All Posts
           </Link>
