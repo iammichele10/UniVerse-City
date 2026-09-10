@@ -1,9 +1,20 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getPublishedPostsByCategory } from '@/lib/posts';
 import { getSettings } from '@/lib/settings';
 import { Masthead } from '@/lib/Masthead';
 
-export const dynamic = 'force-dynamic'; // backstop; publish also triggers on-demand revalidation
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const settings = await getSettings();
+  const category = slugToCategory(slug, settings.categories) ?? slug;
+  return {
+    title: category,
+    description: `Latest ${category} stories from UniVerse-City.`,
+  };
+} // backstop; publish also triggers on-demand revalidation
 
 export async function generateStaticParams() {
   const settings = await getSettings();

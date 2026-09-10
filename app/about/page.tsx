@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { getSettings } from '@/lib/settings';
 import { Masthead } from '@/lib/Masthead';
+
+export const metadata: Metadata = {
+  title: 'About',
+  description: 'Meet the students and people behind UniVerse-City.',
+};
 
 export const dynamic = 'force-dynamic';
 

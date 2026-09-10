@@ -5,8 +5,8 @@ import type { SiteSettings, TeamMember } from './types';
 const SETTINGS_REF = doc(db, 'settings', 'site');
 
 export const DEFAULT_SETTINGS: SiteSettings = {
-  siteName: 'The Young Voice',
-  tagline: 'The official student blog of Fieldstone Academy',
+  siteName: 'UniVerse-City',
+  tagline: 'The official student publication of Fieldstone Academy',
   estYear: '2026',
   categories: ['Academics', 'Sports', 'Announcements', 'Arts & Culture'],
   aboutIntro: 'The official student blog of Fieldstone Academy. This page introduces the people behind the paper.',

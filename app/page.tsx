@@ -8,12 +8,27 @@ import { formatDate } from '@/lib/date';
 // triggered the moment a post is published (see app/api/revalidate/route.ts).
 export const dynamic = 'force-dynamic';
 
+const SITE_URL = 'https://universecityhub.com';
+
+
 export default async function HomePage() {
   const [posts, settings] = await Promise.all([getPublishedPosts(), getSettings()]);
   const [lead, ...rest] = posts;
 
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'UniVerse-City',
+    url: SITE_URL,
+  };
+
   return (
-    <main className="mx-auto max-w-3xl">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <main className="mx-auto max-w-3xl">
       <Masthead settings={settings} />
 
       <div className="px-4 py-7 sm:px-6 sm:py-9">
@@ -60,6 +75,7 @@ export default async function HomePage() {
           ))}
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

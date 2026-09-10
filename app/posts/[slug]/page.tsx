@@ -1,9 +1,40 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPostBySlug } from '@/lib/posts';
 import { Comments } from '@/lib/CommentsSection';
 import { formatDate } from '@/lib/date';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
+
+  if (!post) {
+    return {
+      title: 'Post not found',
+    };
+  }
+
+  return {
+    title: post.title,
+    description: post.excerpt,
+    alternates: {
+      canonical: `/posts/${post.slug}`,
+    },
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description: post.excerpt,
+      url: `/posts/${post.slug}`,
+      images: post.coverImageUrl ? [{ url: post.coverImageUrl }] : undefined,
+    },
+  };
+}
 
 // Same slugging rule used by Masthead.tsx and app/category/[slug]/page.tsx,
 // so "Back to <category>" lands on the matching category tab.

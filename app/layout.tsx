@@ -1,8 +1,41 @@
+import type { Metadata } from 'next';
 import './globals.css';
 
-export const metadata = {
-  title: 'UniVerse-City',
-  description: "The official student blog of UniVerse-City",
+const SITE_URL = 'https://universecityhub.com';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'UniVerse-City',
+    template: '%s | UniVerse-City',
+  },
+  description:
+    'UniVerse-City is a student publication featuring student news, stories, ideas, academics, sports, arts and culture, and technology.',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    url: SITE_URL,
+    siteName: 'UniVerse-City',
+    title: 'UniVerse-City',
+    description:
+      'UniVerse-City is a student publication featuring student news, stories, ideas, academics, sports, arts and culture, and technology.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'UniVerse-City',
+    description:
+      'UniVerse-City is a student publication featuring student news, stories, ideas, academics, sports, arts and culture, and technology.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
