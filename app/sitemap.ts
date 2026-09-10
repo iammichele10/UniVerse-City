@@ -8,6 +8,29 @@ function categorySlug(category: string) {
   return category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
 }
 
+function toIsoDate(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (value && typeof value === 'object' && 'toDate' in value) {
+    const toDate = (value as { toDate: () => Date }).toDate;
+    const date = toDate();
+    if (date instanceof Date) {
+      return date.toISOString();
+    }
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  return new Date().toISOString();
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, settings] = await Promise.all([
     getPublishedPosts(),
@@ -37,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const postPages: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${SITE_URL}/posts/${post.slug}`,
-    lastModified: post.updatedAt ?? post.publishAt ?? new Date(),
+    lastModified: toIsoDate(post.updatedAt ?? post.publishAt),
     changeFrequency: 'weekly',
     priority: 0.8,
   }));
