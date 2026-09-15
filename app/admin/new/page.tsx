@@ -6,7 +6,12 @@ import dynamic from 'next/dynamic';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { EmojiStyle, type EmojiClickData } from 'emoji-picker-react';
-import { UnderlineMark, LinkMark } from '@/lib/tiptapFormatting';
+import {
+  UnderlineMark,
+  LinkMark,
+  AutoLinkMark,
+  HashtagMark,
+} from '@/lib/tiptapFormatting';
 import { auth } from '@/lib/firebaseAuth';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { createPost, updatePost, getPostById } from '@/lib/posts';
@@ -42,7 +47,13 @@ function NewPostForm() {
   const router = useRouter();
 
   const editor = useEditor({
-    extensions: [StarterKit, UnderlineMark, LinkMark],
+    extensions: [
+      StarterKit,
+      UnderlineMark,
+      LinkMark,
+      AutoLinkMark,
+      HashtagMark,
+    ],
     content: '',
     immediatelyRender: false,
   });
@@ -311,41 +322,6 @@ function NewPostForm() {
               1. List
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (!editor) return;
-
-                const current = editor.getAttributes('link')
-                  .href as string | undefined;
-
-                const url = window.prompt(
-                  'Enter URL',
-                  current || 'https://'
-                );
-
-                if (url === null) return;
-
-                if (!url.trim()) {
-                  editor.chain().focus().unsetMark('link').run();
-                } else {
-                  editor
-                    .chain()
-                    .focus()
-                    .setMark('link', { href: url.trim() })
-                    .run();
-                }
-              }}
-              className={`rounded px-2 py-1 text-sm ${
-                editor?.isActive('link')
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
-              }`}
-              title="Add link"
-            >
-              ↗
-            </button>
-
             <span className="mx-1 h-5 w-px bg-rule" />
 
             {/* Emoji button */}
@@ -409,8 +385,10 @@ function NewPostForm() {
         </div>
 
         <p className="mt-1 text-[11px] text-muted">
-          Select text before using the link button. Tap 😊 to open the
-          full emoji picker with search, categories and skin tones.
+          Hashtags such as #ManCity appear blue but are not clickable.
+          Website addresses such as meta.ai become clickable automatically.
+          Tap 😊 to open the full emoji picker with search, categories and
+          skin tones.
         </p>
       </div>
 
