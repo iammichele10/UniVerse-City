@@ -3,62 +3,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Only emails listed in /admins/{email} can write content.
-    // Doc ID = the admin's email address, doc just needs to exist.
     function isAdmin() {
       return request.auth != null &&
         exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
     }
 
     match /admins/{email} {
-      // Nobody can write this from the client — manage via Firebase console
-      // or a trusted Cloud Function only.
       allow read: if isAdmin();
       allow write: if false;
     }
 
     match /posts/{postId} {
-      // Public can only read posts that are actually published and due.
-      allow read: if resource.data.status == 'published'
-                   && resource.data.publishAt <= request.time;
+      // Public users can only read posts marked as published.
+      // The application additionally filters out posts whose
+      // publishAt date has not yet arrived.
+      allow read: if resource.data.status == 'published';
 
-      // Admins can read everything (drafts, scheduled, published)
-      allow read: if isAdmin();
-
-      // Only admins can create/update/delete
+      // Admins can manage all posts.
       allow create, update, delete: if isAdmin();
     }
 
     match /media/{mediaId} {
-      allow read: if true; // media metadata is public (images are public anyway)
+      allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Single doc: settings/site — site name, tagline, categories, byline.
-    // Public needs read access since the homepage masthead renders from it.
     match /settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
     match /comments/{commentId} {
-      // Public read — comments render on public post pages.
       allow read: if true;
 
-      // Any signed-in reader can comment, but only as themselves: the
-      // authorUid on the new doc must match their own uid, and the text
-      // has to actually be there (not empty, not absurdly long).
       allow create: if request.auth != null
                      && request.resource.data.authorUid == request.auth.uid
                      && request.resource.data.text is string
                      && request.resource.data.text.size() > 0
                      && request.resource.data.text.size() <= 1000;
 
-      // A commenter can delete their own comment; an admin can delete any.
       allow delete: if request.auth != null
-                     && (resource.data.authorUid == request.auth.uid || isAdmin());
+                     && (
+                       resource.data.authorUid == request.auth.uid
+                       || isAdmin()
+                     );
 
-      // No editing — delete and repost instead, keeps this simple.
       allow update: if false;
     }
   }

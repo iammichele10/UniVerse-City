@@ -8,17 +8,14 @@ function categorySlug(category: string) {
   return category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, settings] = await Promise.all([
     getPublishedPosts(),
     getSettings(),
   ]);
 
-  // Do not pass Firestore Timestamp objects through Next's sitemap metadata.
-  // The post dates in Firestore are Timestamp values, and malformed/undefined
-  // date values can make Next fail while prerendering /sitemap.xml.
-  // lastModified is optional in a sitemap, so the safest approach here is to
-  // omit it and let Google use the page itself to determine freshness.
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,

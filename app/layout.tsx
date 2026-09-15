@@ -5,15 +5,19 @@ const SITE_URL = 'https://universecityhub.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+
   title: {
     default: 'UniVerse-City',
     template: '%s | UniVerse-City',
   },
+
   description:
     'UniVerse-City is a student publication featuring student news, stories, ideas, academics, sports, arts and culture, and technology.',
+
   alternates: {
     canonical: '/',
   },
+
   openGraph: {
     type: 'website',
     url: SITE_URL,
@@ -22,12 +26,14 @@ export const metadata: Metadata = {
     description:
       'UniVerse-City is a student publication featuring student news, stories, ideas, academics, sports, arts and culture, and technology.',
   },
+
   twitter: {
     card: 'summary_large_image',
     title: 'UniVerse-City',
     description:
       'UniVerse-City is a student publication featuring student news, stories, ideas, academics, sports, arts and culture, and technology.',
   },
+
   robots: {
     index: true,
     follow: true,
@@ -38,16 +44,36 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+
         <link
-          href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
+
+        {/* Tell search engines the preferred name of the website */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'UniVerse-City',
+              alternateName: 'universecityhub.com',
+              url: SITE_URL,
+            }),
+          }}
+        />
       </head>
+
       <body className="bg-paper text-ink font-sans">{children}</body>
     </html>
   );

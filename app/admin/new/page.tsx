@@ -2,8 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { EmojiStyle, type EmojiClickData } from 'emoji-picker-react';
+import { UnderlineMark, LinkMark } from '@/lib/tiptapFormatting';
 import { auth } from '@/lib/firebaseAuth';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { createPost, updatePost, getPostById } from '@/lib/posts';
@@ -11,17 +14,20 @@ import { getSettings } from '@/lib/settings';
 import { toDate } from '@/lib/date';
 import type { PostStatus } from '@/lib/types';
 
-// Tiptap gives real paragraphs/bold/italic instead of one flat text blob —
-// install with: npm install @tiptap/react @tiptap/starter-kit
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), {
+  ssr: false,
+});
 
-// Formats a Date for an <input type="datetime-local"> value (local time, no seconds).
+// Formats a Date for an <input type="datetime-local"> value.
 function toDatetimeLocalValue(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+    d.getDate()
+  )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// useSearchParams() requires a Suspense boundary in the app router, or the
-// production build fails — this outer component just provides that.
+// useSearchParams() requires a Suspense boundary in the app router.
 export default function NewPostPage() {
   return (
     <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
@@ -32,7 +38,14 @@ export default function NewPostPage() {
 
 function NewPostForm() {
   const searchParams = useSearchParams();
-  const editingId = searchParams.get('id'); // present when this is an edit, not a new post
+  const editingId = searchParams.get('id');
+  const router = useRouter();
+
+  const editor = useEditor({
+    extensions: [StarterKit, UnderlineMark, LinkMark],
+    content: '',
+    immediatelyRender: false,
+  });
 
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
@@ -41,36 +54,35 @@ function NewPostForm() {
   const [authorName, setAuthorName] = useState('');
   const [tags, setTags] = useState('');
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [existingCoverUrl, setExistingCoverUrl] = useState<string | null>(null);
+  const [existingCoverUrl, setExistingCoverUrl] = useState<string | null>(
+    null
+  );
   const [status, setStatus] = useState<PostStatus>('draft');
   const [publishAt, setPublishAt] = useState('');
   const [saving, setSaving] = useState(false);
   const [loadingPost, setLoadingPost] = useState(!!editingId);
-  const router = useRouter();
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: '',
-  });
-
-  // Categories still come from Settings (shared, site-wide). Author name no
-  // longer does — it's typed fresh per post below, right before publishing.
+  // Categories still come from Settings.
   useEffect(() => {
     getSettings().then((s) => {
       setCategories(s.categories);
-      if (!editingId) setCategory(s.categories[0] ?? '');
+
+      if (!editingId) {
+        setCategory(s.categories[0] ?? '');
+      }
     });
   }, [editingId]);
 
-  // Editing an existing post: load its data into the form once the editor
-  // instance and post both exist. Without this, /admin/new?id=... always
-  // rendered a blank form and "Save" silently created a duplicate post.
+  // Load an existing post when editing.
   useEffect(() => {
     if (!editingId || !editor) return;
+
     let cancelled = false;
 
     getPostById(editingId).then((post) => {
       if (cancelled || !post) return;
+
       setTitle(post.title);
       setExcerpt(post.excerpt);
       setCategory(post.category);
@@ -78,8 +90,11 @@ function NewPostForm() {
       setTags(post.tags.join(', '));
       setExistingCoverUrl(post.coverImageUrl);
       setStatus(post.status);
+
       const d = toDate(post.publishAt);
+
       setPublishAt(d ? toDatetimeLocalValue(d) : '');
+
       editor.commands.setContent(post.body || '');
       setLoadingPost(false);
     });
@@ -90,23 +105,31 @@ function NewPostForm() {
   }, [editingId, editor]);
 
   function slugify(text: string) {
-    return text.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-');
   }
 
   async function notifyRevalidate(cat: string) {
-    // Fire-and-forget: makes the publish feel instant on the public site
-    // instead of waiting on the 60s backstop cache.
     fetch('/api/revalidate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category: cat }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        category: cat,
+      }),
     }).catch(() => {});
   }
 
   async function handleSave() {
     setSaving(true);
+
     try {
       let coverImageUrl: string | null = existingCoverUrl;
+
       if (coverFile) {
         coverImageUrl = await uploadImageToCloudinary(coverFile);
       }
@@ -118,7 +141,10 @@ function NewPostForm() {
         body: editor?.getHTML() ?? '',
         coverImageUrl,
         category,
-        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+        tags: tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
         status,
         publishAt: publishAt ? new Date(publishAt) : new Date(),
         authorId: auth.currentUser?.uid ?? '',
@@ -147,7 +173,9 @@ function NewPostForm() {
 
   return (
     <div className="max-w-2xl space-y-4">
-      <h1 className="text-lg font-semibold">{editingId ? 'Edit Post' : 'New Post'}</h1>
+      <h1 className="text-lg font-semibold">
+        {editingId ? 'Edit Post' : 'New Post'}
+      </h1>
 
       <input
         placeholder="Title"
@@ -155,6 +183,7 @@ function NewPostForm() {
         onChange={(e) => setTitle(e.target.value)}
         className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm"
       />
+
       <input
         placeholder="Short excerpt for cards / SEO"
         value={excerpt}
@@ -163,10 +192,226 @@ function NewPostForm() {
       />
 
       <div>
-        <label className="mb-1 block text-xs text-muted">Body</label>
-        <div className="min-h-[200px] rounded-md border border-rule bg-white px-3 py-2 text-sm [&_.tiptap]:outline-none [&_.tiptap_p]:mb-3">
-          <EditorContent editor={editor} />
+        <label className="mb-1 block text-xs text-muted">
+          Body
+        </label>
+
+        <div className="overflow-hidden rounded-md border border-rule bg-white">
+          <div className="relative flex flex-wrap items-center gap-1 border-b border-rule bg-paper-raised p-2">
+            <button
+              type="button"
+              onClick={() =>
+                editor?.chain().focus().toggleBold().run()
+              }
+              className={`rounded px-2 py-1 text-sm ${
+                editor?.isActive('bold')
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+              title="Bold"
+            >
+              <b>B</b>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                editor?.chain().focus().toggleItalic().run()
+              }
+              className={`rounded px-2 py-1 text-sm ${
+                editor?.isActive('italic')
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+              title="Italic"
+            >
+              <i>I</i>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                editor?.chain().focus().toggleMark('underline').run()
+              }
+              className={`rounded px-2 py-1 text-sm ${
+                editor?.isActive('underline')
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+              title="Underline"
+            >
+              <u>U</u>
+            </button>
+
+            <span className="mx-1 h-5 w-px bg-rule" />
+
+            <button
+              type="button"
+              onClick={() =>
+                editor
+                  ?.chain()
+                  .focus()
+                  .toggleHeading({ level: 2 })
+                  .run()
+              }
+              className={`rounded px-2 py-1 text-xs font-semibold ${
+                editor?.isActive('heading', { level: 2 })
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+            >
+              H2
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                editor
+                  ?.chain()
+                  .focus()
+                  .toggleHeading({ level: 3 })
+                  .run()
+              }
+              className={`rounded px-2 py-1 text-xs font-semibold ${
+                editor?.isActive('heading', { level: 3 })
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+            >
+              H3
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                editor?.chain().focus().toggleBulletList().run()
+              }
+              className={`rounded px-2 py-1 text-sm ${
+                editor?.isActive('bulletList')
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+              title="Bulleted list"
+            >
+              • List
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                editor?.chain().focus().toggleOrderedList().run()
+              }
+              className={`rounded px-2 py-1 text-sm ${
+                editor?.isActive('orderedList')
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+              title="Numbered list"
+            >
+              1. List
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!editor) return;
+
+                const current = editor.getAttributes('link')
+                  .href as string | undefined;
+
+                const url = window.prompt(
+                  'Enter URL',
+                  current || 'https://'
+                );
+
+                if (url === null) return;
+
+                if (!url.trim()) {
+                  editor.chain().focus().unsetMark('link').run();
+                } else {
+                  editor
+                    .chain()
+                    .focus()
+                    .setMark('link', { href: url.trim() })
+                    .run();
+                }
+              }}
+              className={`rounded px-2 py-1 text-sm ${
+                editor?.isActive('link')
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+              title="Add link"
+            >
+              ↗
+            </button>
+
+            <span className="mx-1 h-5 w-px bg-rule" />
+
+            {/* Emoji button */}
+            <button
+              type="button"
+              onClick={() =>
+                setEmojiPickerOpen((value) => !value)
+              }
+              className={`rounded px-2 py-1 text-base ${
+                emojiPickerOpen
+                  ? 'bg-navy text-white'
+                  : 'hover:bg-white'
+              }`}
+              title="Emoji"
+              aria-label="Open emoji picker"
+            >
+              😊
+            </button>
+
+            {/* Responsive emoji picker */}
+            {emojiPickerOpen && (
+              <div
+                className="
+                  absolute
+                  left-1/2
+                  top-full
+                  z-40
+                  mt-2
+                  -translate-x-1/2
+                  sm:left-2
+                  sm:translate-x-0
+                "
+              >
+                <div className="max-w-[calc(100vw-24px)] overflow-hidden rounded-lg shadow-lg">
+                  <EmojiPicker
+                    onEmojiClick={(emojiData: EmojiClickData) => {
+                      editor
+                        ?.chain()
+                        .focus()
+                        .insertContent(emojiData.emoji)
+                        .run();
+
+                      setEmojiPickerOpen(false);
+                    }}
+                    previewConfig={{
+                      showPreview: false,
+                    }}
+                    width="100%"
+                    height={400}
+                    emojiStyle={EmojiStyle.NATIVE}
+                    lazyLoadEmojis
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="min-h-[240px] px-3 py-3 text-sm [&_.tiptap]:min-h-[220px] [&_.tiptap]:outline-none [&_.tiptap_p]:mb-3 [&_.tiptap_h2]:mb-3 [&_.tiptap_h2]:mt-4 [&_.tiptap_h2]:font-serif [&_.tiptap_h2]:text-xl [&_.tiptap_h3]:mb-2 [&_.tiptap_h3]:mt-3 [&_.tiptap_h3]:font-serif [&_.tiptap_h3]:text-lg [&_.tiptap_ul]:mb-3 [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-5 [&_.tiptap_ol]:mb-3 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-5">
+            <EditorContent editor={editor} />
+          </div>
         </div>
+
+        <p className="mt-1 text-[11px] text-muted">
+          Select text before using the link button. Tap 😊 to open the
+          full emoji picker with search, categories and skin tones.
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -176,9 +421,12 @@ function NewPostForm() {
           className="rounded-md border border-rule bg-white px-3 py-2 text-sm sm:flex-1"
         >
           {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
         </select>
+
         <input
           placeholder="Tags (comma separated)"
           value={tags}
@@ -188,17 +436,35 @@ function NewPostForm() {
       </div>
 
       <div>
-        <label className="block text-xs text-muted">Cover image</label>
+        <label className="block text-xs text-muted">
+          Cover image
+        </label>
+
         {existingCoverUrl && !coverFile && (
           <div className="my-2 flex h-28 w-28 items-center justify-center overflow-hidden rounded-sm bg-[#F5F4F0]">
-            <img src={existingCoverUrl} alt="" className="h-full w-full object-contain" />
+            <img
+              src={existingCoverUrl}
+              alt=""
+              className="h-full w-full object-contain"
+            />
           </div>
         )}
-        <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)} className="text-sm" />
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) =>
+            setCoverFile(e.target.files?.[0] ?? null)
+          }
+          className="text-sm"
+        />
       </div>
 
       <div>
-        <label className="block text-xs text-muted">Byline (author name)</label>
+        <label className="block text-xs text-muted">
+          Byline (author name)
+        </label>
+
         <input
           placeholder="Your name, shown under the headline"
           value={authorName}
@@ -210,13 +476,16 @@ function NewPostForm() {
       <div className="flex flex-wrap items-center gap-3 sm:gap-4">
         <select
           value={status}
-          onChange={(e) => setStatus(e.target.value as PostStatus)}
+          onChange={(e) =>
+            setStatus(e.target.value as PostStatus)
+          }
           className="rounded-md border border-rule bg-white px-3 py-2 text-sm"
         >
           <option value="draft">Draft</option>
           <option value="scheduled">Scheduled</option>
           <option value="published">Published</option>
         </select>
+
         {status === 'scheduled' && (
           <input
             type="datetime-local"

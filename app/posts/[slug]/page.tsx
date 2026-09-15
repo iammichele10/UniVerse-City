@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPostBySlug } from '@/lib/posts';
 import { Comments } from '@/lib/CommentsSection';
+import { LikeButton } from '@/lib/LikeButton';
 import { formatDate } from '@/lib/date';
 
 export const dynamic = 'force-dynamic';
@@ -82,6 +83,11 @@ export default async function PostPage({
             ))}
           </div>
         )}
+
+        <div className="mt-5 flex items-center gap-6 border-t border-rule pt-3">
+          <LikeButton postId={post.id} />
+          <div className="text-sm text-muted">Comments below</div>
+        </div>
         <Comments postId={post.id} postSlug={post.slug} postTitle={post.title} />
       </article>
     </main>

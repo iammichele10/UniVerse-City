@@ -5,3 +5,31 @@
 body {
   color: #1E2320;
 }
+
+@keyframes like-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.35);
+  }
+
+  70% {
+    transform: scale(0.9);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-like-pop {
+  animation: like-pop 300ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-like-pop {
+    animation: none;
+  }
+}
