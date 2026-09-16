@@ -30,21 +30,84 @@ function toDailyView(
   };
 }
 
-export async function recordPostView(postId: string) {
-  const date = new Date().toISOString().slice(0, 10);
-  const id = `${postId}_${date}`;
+/**
+ * Returns today's date in YYYY-MM-DD format.
+ */
+function getToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
-  const ref = doc(db, 'dailyViews', id);
+/**
+ * Creates the local storage key used to remember
+ * whether this browser has viewed this post today.
+ */
+function getViewStorageKey(postId: string, date: string): string {
+  return `uvc-viewed-${postId}-${date}`;
+}
 
-  await setDoc(
-    ref,
-    {
-      postId,
-      date,
-      views: increment(1),
-    },
-    { merge: true }
-  );
+/**
+ * Records one view for a post.
+ *
+ * A post can only be counted once per day in the
+ * same browser/device storage.
+ *
+ * localStorage is used instead of sessionStorage so
+ * that different tabs of the same browser share the
+ * viewed state.
+ */
+export async function recordPostView(postId: string): Promise<void> {
+  if (!postId) {
+    return;
+  }
+
+  // Server/client code safety.
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const date = getToday();
+  const storageKey = getViewStorageKey(postId, date);
+
+  try {
+    // Already viewed this post today.
+    if (localStorage.getItem(storageKey)) {
+      return;
+    }
+
+    /*
+     * Set this BEFORE the Firestore request.
+     *
+     * This is important because another tab could otherwise
+     * call recordPostView() while the first Firestore request
+     * is still waiting.
+     */
+    localStorage.setItem(storageKey, '1');
+
+    const id = `${postId}_${date}`;
+    const ref = doc(db, 'dailyViews', id);
+
+    await setDoc(
+      ref,
+      {
+        postId,
+        date,
+        views: increment(1),
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    /*
+     * If Firestore fails, remove the local marker so the
+     * view can be attempted again later.
+     */
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // Ignore localStorage cleanup errors.
+    }
+
+    throw error;
+  }
 }
 
 export async function getRecentDailyViews(
