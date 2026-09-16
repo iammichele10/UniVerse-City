@@ -74,6 +74,9 @@ export async function getPublishedPostsByCategory(
 export async function getPostBySlug(
   slug: string
 ): Promise<Post | null> {
+  // The status condition is intentional.
+  // Firestore security rules only allow public reads of
+  // documents whose status is "published".
   const q = query(
     postsRef,
     where('slug', '==', slug),

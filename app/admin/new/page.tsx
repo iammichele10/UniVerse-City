@@ -6,36 +6,54 @@ import dynamic from 'next/dynamic';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { EmojiStyle, type EmojiClickData } from 'emoji-picker-react';
+
 import {
   UnderlineMark,
   LinkMark,
   AutoLinkMark,
   HashtagMark,
 } from '@/lib/tiptapFormatting';
+
 import { auth } from '@/lib/firebaseAuth';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
-import { createPost, updatePost, getPostById } from '@/lib/posts';
+import {
+  createPost,
+  updatePost,
+  getPostById,
+} from '@/lib/posts';
 import { getSettings } from '@/lib/settings';
 import { toDate } from '@/lib/date';
 import type { PostStatus } from '@/lib/types';
 
-const EmojiPicker = dynamic(() => import('emoji-picker-react'), {
-  ssr: false,
-});
+const EmojiPicker = dynamic(
+  () => import('emoji-picker-react'),
+  {
+    ssr: false,
+  }
+);
 
 // Formats a Date for an <input type="datetime-local"> value.
 function toDatetimeLocalValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
+  const pad = (n: number) =>
+    String(n).padStart(2, '0');
 
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
-    d.getDate()
-  )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(
+    d.getMonth() + 1
+  )}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
 }
 
 // useSearchParams() requires a Suspense boundary in the app router.
 export default function NewPostPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+    <Suspense
+      fallback={
+        <p className="text-sm text-muted">
+          Loading…
+        </p>
+      }
+    >
       <NewPostForm />
     </Suspense>
   );
@@ -64,15 +82,18 @@ function NewPostForm() {
   const [categories, setCategories] = useState<string[]>([]);
   const [authorName, setAuthorName] = useState('');
   const [tags, setTags] = useState('');
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [existingCoverUrl, setExistingCoverUrl] = useState<string | null>(
-    null
-  );
-  const [status, setStatus] = useState<PostStatus>('draft');
+  const [coverFile, setCoverFile] =
+    useState<File | null>(null);
+  const [existingCoverUrl, setExistingCoverUrl] =
+    useState<string | null>(null);
+  const [status, setStatus] =
+    useState<PostStatus>('draft');
   const [publishAt, setPublishAt] = useState('');
   const [saving, setSaving] = useState(false);
-  const [loadingPost, setLoadingPost] = useState(!!editingId);
-  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [loadingPost, setLoadingPost] =
+    useState(!!editingId);
+  const [emojiPickerOpen, setEmojiPickerOpen] =
+    useState(false);
 
   // Categories still come from Settings.
   useEffect(() => {
@@ -104,9 +125,14 @@ function NewPostForm() {
 
       const d = toDate(post.publishAt);
 
-      setPublishAt(d ? toDatetimeLocalValue(d) : '');
+      setPublishAt(
+        d ? toDatetimeLocalValue(d) : ''
+      );
 
-      editor.commands.setContent(post.body || '');
+      editor.commands.setContent(
+        post.body || ''
+      );
+
       setLoadingPost(false);
     });
 
@@ -135,21 +161,177 @@ function NewPostForm() {
     }).catch(() => {});
   }
 
+  /**
+   * Safety-net conversion for hashtags.
+   *
+   * HashtagMark now creates a real Tiptap mark,
+   * so hashtags should already be present in
+   * editor.getHTML().
+   *
+   * This function also catches any plain hashtags
+   * that somehow remain unmarked before saving.
+   */
+  function prepareBodyForSaving(
+    html: string
+  ): string {
+    if (!html) return html;
+
+    const parser = new DOMParser();
+
+    const parsedDocument =
+      parser.parseFromString(
+        html,
+        'text/html'
+      );
+
+    const hashtagPattern =
+      /#[\p{L}\p{N}_-]+/gu;
+
+    const walker =
+      parsedDocument.createTreeWalker(
+        parsedDocument.body,
+        NodeFilter.SHOW_TEXT
+      );
+
+    const textNodes: Text[] = [];
+
+    let currentNode = walker.nextNode();
+
+    while (currentNode) {
+      const textNode =
+        currentNode as Text;
+
+      const parent =
+        textNode.parentElement;
+
+      if (
+        parent &&
+        parent.tagName !== 'A' &&
+        parent.tagName !== 'SCRIPT' &&
+        parent.tagName !== 'STYLE' &&
+        !parent.hasAttribute(
+          'data-hashtag'
+        ) &&
+        !parent.classList.contains(
+          'hashtag-blue'
+        )
+      ) {
+        textNodes.push(textNode);
+      }
+
+      currentNode = walker.nextNode();
+    }
+
+    for (const textNode of textNodes) {
+      const text =
+        textNode.nodeValue ?? '';
+
+      hashtagPattern.lastIndex = 0;
+
+      const matches =
+        [...text.matchAll(
+          hashtagPattern
+        )];
+
+      if (matches.length === 0) {
+        continue;
+      }
+
+      const fragment =
+        parsedDocument.createDocumentFragment();
+
+      let lastIndex = 0;
+
+      for (const match of matches) {
+        const hashtag = match[0];
+        const index =
+          match.index ?? 0;
+
+        if (index > lastIndex) {
+          fragment.appendChild(
+            parsedDocument.createTextNode(
+              text.slice(
+                lastIndex,
+                index
+              )
+            )
+          );
+        }
+
+        const span =
+          parsedDocument.createElement(
+            'span'
+          );
+
+        span.className =
+          'hashtag-blue';
+
+        span.setAttribute(
+          'data-hashtag',
+          'true'
+        );
+
+        span.setAttribute(
+          'style',
+          'color:#2563eb;text-decoration:none;'
+        );
+
+        span.textContent = hashtag;
+
+        fragment.appendChild(span);
+
+        lastIndex =
+          index + hashtag.length;
+      }
+
+      if (lastIndex < text.length) {
+        fragment.appendChild(
+          parsedDocument.createTextNode(
+            text.slice(lastIndex)
+          )
+        );
+      }
+
+      textNode.parentNode?.replaceChild(
+        fragment,
+        textNode
+      );
+    }
+
+    return (
+      parsedDocument.body.innerHTML
+    );
+  }
+
   async function handleSave() {
     setSaving(true);
 
     try {
-      let coverImageUrl: string | null = existingCoverUrl;
+      let coverImageUrl:
+        | string
+        | null =
+        existingCoverUrl;
 
       if (coverFile) {
-        coverImageUrl = await uploadImageToCloudinary(coverFile);
+        coverImageUrl =
+          await uploadImageToCloudinary(
+            coverFile
+          );
       }
+
+      const editorHTML =
+        editor?.getHTML() ?? '';
+
+      const preparedBody =
+        prepareBodyForSaving(
+          editorHTML
+        );
 
       const payload = {
         title,
         slug: slugify(title),
         excerpt,
-        body: editor?.getHTML() ?? '',
+        body: preparedBody,
         coverImageUrl,
         category,
         tags: tags
@@ -157,19 +339,29 @@ function NewPostForm() {
           .map((t) => t.trim())
           .filter(Boolean),
         status,
-        publishAt: publishAt ? new Date(publishAt) : new Date(),
-        authorId: auth.currentUser?.uid ?? '',
+        publishAt: publishAt
+          ? new Date(publishAt)
+          : new Date(),
+        authorId:
+          auth.currentUser?.uid ?? '',
         authorName,
       };
 
       if (editingId) {
-        await updatePost(editingId, payload as any);
+        await updatePost(
+          editingId,
+          payload as any
+        );
       } else {
-        await createPost(payload as any);
+        await createPost(
+          payload as any
+        );
       }
 
       if (status === 'published') {
-        await notifyRevalidate(category);
+        await notifyRevalidate(
+          category
+        );
       }
 
       router.push('/admin');
@@ -179,26 +371,36 @@ function NewPostForm() {
   }
 
   if (loadingPost) {
-    return <p className="text-sm text-muted">Loading post…</p>;
+    return (
+      <p className="text-sm text-muted">
+        Loading post…
+      </p>
+    );
   }
 
   return (
     <div className="max-w-2xl space-y-4">
       <h1 className="text-lg font-semibold">
-        {editingId ? 'Edit Post' : 'New Post'}
+        {editingId
+          ? 'Edit Post'
+          : 'New Post'}
       </h1>
 
       <input
         placeholder="Title"
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) =>
+          setTitle(e.target.value)
+        }
         className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm"
       />
 
       <input
         placeholder="Short excerpt for cards / SEO"
         value={excerpt}
-        onChange={(e) => setExcerpt(e.target.value)}
+        onChange={(e) =>
+          setExcerpt(e.target.value)
+        }
         className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm"
       />
 
@@ -212,7 +414,11 @@ function NewPostForm() {
             <button
               type="button"
               onClick={() =>
-                editor?.chain().focus().toggleBold().run()
+                editor
+                  ?.chain()
+                  .focus()
+                  .toggleBold()
+                  .run()
               }
               className={`rounded px-2 py-1 text-sm ${
                 editor?.isActive('bold')
@@ -227,7 +433,11 @@ function NewPostForm() {
             <button
               type="button"
               onClick={() =>
-                editor?.chain().focus().toggleItalic().run()
+                editor
+                  ?.chain()
+                  .focus()
+                  .toggleItalic()
+                  .run()
               }
               className={`rounded px-2 py-1 text-sm ${
                 editor?.isActive('italic')
@@ -242,10 +452,18 @@ function NewPostForm() {
             <button
               type="button"
               onClick={() =>
-                editor?.chain().focus().toggleMark('underline').run()
+                editor
+                  ?.chain()
+                  .focus()
+                  .toggleMark(
+                    'underline'
+                  )
+                  .run()
               }
               className={`rounded px-2 py-1 text-sm ${
-                editor?.isActive('underline')
+                editor?.isActive(
+                  'underline'
+                )
                   ? 'bg-navy text-white'
                   : 'hover:bg-white'
               }`}
@@ -262,11 +480,16 @@ function NewPostForm() {
                 editor
                   ?.chain()
                   .focus()
-                  .toggleHeading({ level: 2 })
+                  .toggleHeading({
+                    level: 2,
+                  })
                   .run()
               }
               className={`rounded px-2 py-1 text-xs font-semibold ${
-                editor?.isActive('heading', { level: 2 })
+                editor?.isActive(
+                  'heading',
+                  { level: 2 }
+                )
                   ? 'bg-navy text-white'
                   : 'hover:bg-white'
               }`}
@@ -280,11 +503,16 @@ function NewPostForm() {
                 editor
                   ?.chain()
                   .focus()
-                  .toggleHeading({ level: 3 })
+                  .toggleHeading({
+                    level: 3,
+                  })
                   .run()
               }
               className={`rounded px-2 py-1 text-xs font-semibold ${
-                editor?.isActive('heading', { level: 3 })
+                editor?.isActive(
+                  'heading',
+                  { level: 3 }
+                )
                   ? 'bg-navy text-white'
                   : 'hover:bg-white'
               }`}
@@ -295,10 +523,16 @@ function NewPostForm() {
             <button
               type="button"
               onClick={() =>
-                editor?.chain().focus().toggleBulletList().run()
+                editor
+                  ?.chain()
+                  .focus()
+                  .toggleBulletList()
+                  .run()
               }
               className={`rounded px-2 py-1 text-sm ${
-                editor?.isActive('bulletList')
+                editor?.isActive(
+                  'bulletList'
+                )
                   ? 'bg-navy text-white'
                   : 'hover:bg-white'
               }`}
@@ -310,10 +544,16 @@ function NewPostForm() {
             <button
               type="button"
               onClick={() =>
-                editor?.chain().focus().toggleOrderedList().run()
+                editor
+                  ?.chain()
+                  .focus()
+                  .toggleOrderedList()
+                  .run()
               }
               className={`rounded px-2 py-1 text-sm ${
-                editor?.isActive('orderedList')
+                editor?.isActive(
+                  'orderedList'
+                )
                   ? 'bg-navy text-white'
                   : 'hover:bg-white'
               }`}
@@ -324,11 +564,12 @@ function NewPostForm() {
 
             <span className="mx-1 h-5 w-px bg-rule" />
 
-            {/* Emoji button */}
             <button
               type="button"
               onClick={() =>
-                setEmojiPickerOpen((value) => !value)
+                setEmojiPickerOpen(
+                  (value) => !value
+                )
               }
               className={`rounded px-2 py-1 text-base ${
                 emojiPickerOpen
@@ -341,7 +582,6 @@ function NewPostForm() {
               😊
             </button>
 
-            {/* Responsive emoji picker */}
             {emojiPickerOpen && (
               <div
                 className="
@@ -357,21 +597,30 @@ function NewPostForm() {
               >
                 <div className="max-w-[calc(100vw-24px)] overflow-hidden rounded-lg shadow-lg">
                   <EmojiPicker
-                    onEmojiClick={(emojiData: EmojiClickData) => {
+                    onEmojiClick={(
+                      emojiData: EmojiClickData
+                    ) => {
                       editor
                         ?.chain()
                         .focus()
-                        .insertContent(emojiData.emoji)
+                        .insertContent(
+                          emojiData.emoji
+                        )
                         .run();
 
-                      setEmojiPickerOpen(false);
+                      setEmojiPickerOpen(
+                        false
+                      );
                     }}
                     previewConfig={{
-                      showPreview: false,
+                      showPreview:
+                        false,
                     }}
                     width="100%"
                     height={400}
-                    emojiStyle={EmojiStyle.NATIVE}
+                    emojiStyle={
+                      EmojiStyle.NATIVE
+                    }
                     lazyLoadEmojis
                   />
                 </div>
@@ -385,21 +634,30 @@ function NewPostForm() {
         </div>
 
         <p className="mt-1 text-[11px] text-muted">
-          Hashtags such as #ManCity appear blue but are not clickable.
-          Website addresses such as meta.ai become clickable automatically.
-          Tap 😊 to open the full emoji picker with search, categories and
-          skin tones.
+          Hashtags such as #ManCity
+          appear blue but are not
+          clickable. Website addresses
+          such as meta.ai become
+          clickable automatically. Tap
+          😊 to open the full emoji
+          picker with search, categories
+          and skin tones.
         </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) =>
+            setCategory(e.target.value)
+          }
           className="rounded-md border border-rule bg-white px-3 py-2 text-sm sm:flex-1"
         >
           {categories.map((c) => (
-            <option key={c} value={c}>
+            <option
+              key={c}
+              value={c}
+            >
               {c}
             </option>
           ))}
@@ -408,7 +666,9 @@ function NewPostForm() {
         <input
           placeholder="Tags (comma separated)"
           value={tags}
-          onChange={(e) => setTags(e.target.value)}
+          onChange={(e) =>
+            setTags(e.target.value)
+          }
           className="rounded-md border border-rule bg-white px-3 py-2 text-sm sm:flex-1"
         />
       </div>
@@ -418,21 +678,25 @@ function NewPostForm() {
           Cover image
         </label>
 
-        {existingCoverUrl && !coverFile && (
-          <div className="my-2 flex h-28 w-28 items-center justify-center overflow-hidden rounded-sm bg-[#F5F4F0]">
-            <img
-              src={existingCoverUrl}
-              alt=""
-              className="h-full w-full object-contain"
-            />
-          </div>
-        )}
+        {existingCoverUrl &&
+          !coverFile && (
+            <div className="my-2 flex h-28 w-28 items-center justify-center overflow-hidden rounded-sm bg-[#F5F4F0]">
+              <img
+                src={existingCoverUrl}
+                alt=""
+                className="h-full w-full object-contain"
+              />
+            </div>
+          )}
 
         <input
           type="file"
           accept="image/*"
           onChange={(e) =>
-            setCoverFile(e.target.files?.[0] ?? null)
+            setCoverFile(
+              e.target.files?.[0] ??
+                null
+            )
           }
           className="text-sm"
         />
@@ -446,7 +710,11 @@ function NewPostForm() {
         <input
           placeholder="Your name, shown under the headline"
           value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
+          onChange={(e) =>
+            setAuthorName(
+              e.target.value
+            )
+          }
           className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm"
         />
       </div>
@@ -455,20 +723,32 @@ function NewPostForm() {
         <select
           value={status}
           onChange={(e) =>
-            setStatus(e.target.value as PostStatus)
+            setStatus(
+              e.target.value as PostStatus
+            )
           }
           className="rounded-md border border-rule bg-white px-3 py-2 text-sm"
         >
-          <option value="draft">Draft</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="published">Published</option>
+          <option value="draft">
+            Draft
+          </option>
+          <option value="scheduled">
+            Scheduled
+          </option>
+          <option value="published">
+            Published
+          </option>
         </select>
 
         {status === 'scheduled' && (
           <input
             type="datetime-local"
             value={publishAt}
-            onChange={(e) => setPublishAt(e.target.value)}
+            onChange={(e) =>
+              setPublishAt(
+                e.target.value
+              )
+            }
             className="rounded-md border border-rule bg-white px-3 py-2 text-sm"
           />
         )}
@@ -476,10 +756,16 @@ function NewPostForm() {
 
       <button
         onClick={handleSave}
-        disabled={saving || !title || !authorName}
+        disabled={
+          saving ||
+          !title ||
+          !authorName
+        }
         className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {saving ? 'Saving…' : 'Save Post'}
+        {saving
+          ? 'Saving…'
+          : 'Save Post'}
       </button>
     </div>
   );

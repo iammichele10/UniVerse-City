@@ -59,6 +59,8 @@ export const LinkMark = Mark.create({
       'a',
       mergeAttributes(HTMLAttributes, {
         class: 'text-blue-600 no-underline',
+        target: '_blank',
+        rel: 'noopener noreferrer',
       }),
       0,
     ];
@@ -67,13 +69,6 @@ export const LinkMark = Mark.create({
 
 /**
  * Automatically converts website addresses into clickable links.
- *
- * Examples:
- * meta.ai
- * google.com
- * chatlinked.uk
- * www.example.com
- * https://example.com
  */
 export const AutoLinkMark = Mark.create({
   name: 'autoLink',
@@ -116,16 +111,24 @@ export const AutoLinkMark = Mark.create({
       new Plugin({
         key: new PluginKey('automaticWebsiteLinks'),
 
-        appendTransaction: (transactions, _oldState, newState) => {
+        appendTransaction: (
+          transactions,
+          _oldState,
+          newState
+        ) => {
           if (
             !transactions.some(
-              (transaction) => transaction.docChanged
+              (transaction) =>
+                transaction.docChanged
             )
           ) {
             return null;
           }
 
-          const markType = newState.schema.marks[markTypeName];
+          const markType =
+            newState.schema.marks[
+              markTypeName
+            ];
 
           if (!markType) {
             return null;
@@ -133,42 +136,59 @@ export const AutoLinkMark = Mark.create({
 
           const transaction = newState.tr;
 
-          newState.doc.descendants((node, position) => {
-            if (!node.isText || !node.text) {
-              return;
-            }
+          newState.doc.descendants(
+            (node, position) => {
+              if (
+                !node.isText ||
+                !node.text
+              ) {
+                return;
+              }
 
-            const websitePattern =
-              /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
+              const websitePattern =
+                /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
 
-            for (const match of node.text.matchAll(
-              websitePattern
-            )) {
-              const text = match[0];
-              const index = match.index ?? 0;
+              for (const match of node.text.matchAll(
+                websitePattern
+              )) {
+                const text = match[0];
+                const index =
+                  match.index ?? 0;
 
-              const from = position + index;
-              const to = from + text.length;
+                const from =
+                  position + index;
 
-              const href = text.startsWith('http')
-                ? text
-                : `https://${text}`;
+                const to =
+                  from + text.length;
 
-              const alreadyLinked = node.marks.some(
-                (mark) =>
-                  mark.type === markType &&
-                  mark.attrs.href === href
-              );
+                const href =
+                  text.startsWith('http')
+                    ? text
+                    : `https://${text}`;
 
-              if (!alreadyLinked) {
-                transaction.addMark(
-                  from,
-                  to,
-                  markType.create({ href })
-                );
+                const alreadyLinked =
+                  node.marks.some(
+                    (mark) =>
+                      mark.type ===
+                        markType &&
+                      mark.attrs.href ===
+                        href
+                  );
+
+                if (
+                  !alreadyLinked
+                ) {
+                  transaction.addMark(
+                    from,
+                    to,
+                    markType.create({
+                      href,
+                    })
+                  );
+                }
               }
             }
-          });
+          );
 
           return transaction.docChanged
             ? transaction
@@ -180,84 +200,122 @@ export const AutoLinkMark = Mark.create({
 });
 
 /**
- * Hashtag highlighting
+ * HASHTAG HIGHLIGHT
  *
- * Hashtags are:
- * - Completely blue
- * - Not clickable
- * - Not underlined
+ * Hashtags are deliberately NOT a Tiptap mark.
  *
- * Examples:
- * #ManCity
- * #Liverpool
- * #Ghana
- * #UniVerseCity
+ * They are editor-only decorations.
+ * Saving is handled separately in page.tsx.
  */
-export const HashtagMark = Extension.create({
-  name: 'hashtagHighlight',
+export const HashtagMark =
+  Extension.create({
+    name: 'hashtagHighlight',
 
-  addProseMirrorPlugins() {
-    const pluginKey = new PluginKey('hashtagHighlight');
+    addProseMirrorPlugins() {
+      const pluginKey =
+        new PluginKey(
+          'hashtagHighlight'
+        );
 
-    const createHashtagDecorations = (doc: any) => {
-      const decorations: Decoration[] = [];
+      function createDecorations(
+        doc: any
+      ) {
+        const decorations: Decoration[] =
+          [];
 
-      doc.descendants((node: any, position: number) => {
-        if (!node.isText || !node.text) {
-          return;
-        }
-
-        const hashtagPattern = /#[\p{L}\p{N}_-]+/gu;
-
-        for (const match of node.text.matchAll(
-          hashtagPattern
-        )) {
-          const hashtag = match[0];
-          const index = match.index ?? 0;
-
-          const from = position + index;
-          const to = from + hashtag.length;
-
-          decorations.push(
-            Decoration.inline(from, to, {
-              class: 'text-blue-600 no-underline',
-            })
-          );
-        }
-      });
-
-      return DecorationSet.create(doc, decorations);
-    };
-
-    return [
-      new Plugin({
-        key: pluginKey,
-
-        state: {
-          init: (_config, state) => {
-            return createHashtagDecorations(state.doc);
-          },
-
-          apply: (transaction, oldDecorations) => {
-            if (transaction.docChanged) {
-              return createHashtagDecorations(
-                transaction.doc
-              );
+        doc.descendants(
+          (
+            node: any,
+            position: number
+          ) => {
+            if (
+              !node.isText ||
+              !node.text
+            ) {
+              return;
             }
 
-            return oldDecorations.map(
-              transaction.mapping,
-              transaction.doc
-            );
-          },
-        },
+            const hashtagPattern =
+              /#[\p{L}\p{N}_-]+/gu;
 
-        props: {
-          decorations(state) {
-            return pluginKey.getState(state);
+            for (const match of node.text.matchAll(
+              hashtagPattern
+            )) {
+              const hashtag =
+                match[0];
+
+              const index =
+                match.index ?? 0;
+
+              const from =
+                position + index;
+
+              const to =
+                from + hashtag.length;
+
+              decorations.push(
+                Decoration.inline(
+                  from,
+                  to,
+                  {
+                    style:
+                      'color:#2563eb !important;text-decoration:none !important;',
+                    class:
+                      'hashtag-blue',
+                  }
+                )
+              );
+            }
+          }
+        );
+
+        return DecorationSet.create(
+          doc,
+          decorations
+        );
+      }
+
+      return [
+        new Plugin({
+          key: pluginKey,
+
+          state: {
+            init: (
+              _config,
+              state
+            ) => {
+              return createDecorations(
+                state.doc
+              );
+            },
+
+            apply: (
+              transaction,
+              oldDecorations
+            ) => {
+              if (
+                transaction.docChanged
+              ) {
+                return createDecorations(
+                  transaction.doc
+                );
+              }
+
+              return oldDecorations.map(
+                transaction.mapping,
+                transaction.doc
+              );
+            },
           },
-        },
-      }),
-    ];
-  },
-});
+
+          props: {
+            decorations(state) {
+              return pluginKey.getState(
+                state
+              );
+            },
+          },
+        }),
+      ];
+    },
+  });
