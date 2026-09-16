@@ -462,3 +462,39 @@ export const HashtagMark =
       ];
     },
   });
+
+/**
+ * LINE SPACING
+ *
+ * Adds a paragraph-level line-height attribute that is saved
+ * in the post HTML and restored when the post is edited.
+ */
+export const LineSpacing = Extension.create({
+  name: 'lineSpacing',
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph', 'heading', 'blockquote', 'listItem'],
+        attributes: {
+          lineHeight: {
+            default: null,
+
+            parseHTML: (element) =>
+              element.style.lineHeight || null,
+
+            renderHTML: (attributes) => {
+              if (!attributes.lineHeight) {
+                return {};
+              }
+
+              return {
+                style: `line-height:${attributes.lineHeight};`,
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+});

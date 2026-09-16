@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getSettings } from '@/lib/settings';
 import { Masthead } from '@/lib/Masthead';
 import CopyrightNotice from '@/components/CopyrightNotice';
+import { Reveal } from '@/lib/Reveal';
 
 export const metadata: Metadata = {
   title: 'About',
@@ -32,8 +33,9 @@ export default async function AboutPage() {
           </div>
 
           <div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
-            {settings.team.map((member) => (
-              <div key={member.id} className="border-b border-rule py-5">
+            {settings.team.map((member, index) => (
+              <Reveal key={`reveal-${member.id}`} delay={index * 70}>
+              <div className="border-b border-rule py-5">
                 <div className="aspect-[4/3] w-full overflow-hidden bg-[#e8e5dc]">
                   {member.photoUrl ? (
                     <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" />
@@ -46,6 +48,7 @@ export default async function AboutPage() {
                 <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-brass">{member.role}</p>
                 <p className="mt-1 font-serif text-2xl">{member.name}</p>
               </div>
+              </Reveal>
             ))}
           </div>
           {settings.team.length === 0 && <p className="py-8 text-sm text-muted">Team information coming soon.</p>}

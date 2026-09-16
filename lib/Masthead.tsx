@@ -1,9 +1,17 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import type { SiteSettings } from '@/lib/types';
 
 function toSlug(cat: string) {
-  return cat.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
+  return cat
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/&/g, 'and');
 }
+
+const NAV_SCROLL_KEY = 'universe-city-nav-scroll';
 
 export function Masthead({
   settings,
@@ -16,59 +24,196 @@ export function Masthead({
   currentPage?: 'about';
   showNav?: boolean;
 }) {
+  const navScrollRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * Restore the exact horizontal position the user left
+   * the mobile navigation at.
+   *
+   * Important:
+   * We do NOT automatically move the navigation when
+   * a link is clicked. The only thing that changes the
+   * position is the user's own horizontal swipe/scroll.
+   */
+  useEffect(() => {
+    const container = navScrollRef.current;
+
+    if (!container) return;
+
+    const isMobile = window.matchMedia('(max-width: 639px)').matches;
+
+    if (!isMobile) return;
+
+    const savedPosition = sessionStorage.getItem(NAV_SCROLL_KEY);
+
+    if (savedPosition !== null) {
+      const scrollPosition = Number(savedPosition);
+
+      if (Number.isFinite(scrollPosition)) {
+        /*
+         * Restore after the navigation has rendered.
+         * Instant restoration is intentional — there should
+         * be no visible movement caused by the page change.
+         */
+        requestAnimationFrame(() => {
+          container.scrollLeft = scrollPosition;
+        });
+      }
+    }
+
+    /*
+     * Save the position whenever the user actually scrolls
+     * or swipes the navigation.
+     */
+    const handleScroll = () => {
+      sessionStorage.setItem(
+        NAV_SCROLL_KEY,
+        String(container.scrollLeft)
+      );
+    };
+
+    container.addEventListener('scroll', handleScroll, {
+      passive: true,
+    });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  /*
+   * Save the latest position immediately before the current
+   * page is left.
+   *
+   * This makes sure the position survives a navigation even
+   * if the final scroll event has not finished firing yet.
+   */
+  useEffect(() => {
+    const container = navScrollRef.current;
+
+    if (!container) return;
+
+    const savePosition = () => {
+      const isMobile = window.matchMedia(
+        '(max-width: 639px)'
+      ).matches;
+
+      if (!isMobile) return;
+
+      sessionStorage.setItem(
+        NAV_SCROLL_KEY,
+        String(container.scrollLeft)
+      );
+    };
+
+    window.addEventListener('pagehide', savePosition);
+
+    return () => {
+      window.removeEventListener('pagehide', savePosition);
+    };
+  }, []);
+
   return (
-    <header className="site-masthead">
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="flex items-center justify-between border-b border-rule py-3 text-[10px] uppercase tracking-[0.18em] text-muted">
-          <span className="hidden sm:block">Student publication</span>
-          <span className="sm:hidden">UniVerse-City</span>
-          <span>Est. {settings.estYear}</span>
-        </div>
+    <>
+      {/* =========================================
+          MASTHEAD
+          ========================================= */}
+      <header className="site-masthead">
+        <div className="mx-auto max-w-6xl px-5 sm:px-8">
 
-        <div className="py-6 text-center sm:py-8">
-          <Link href="/" className="inline-flex items-center justify-center">
-            <img
-              src="/logo.png"
-              alt={settings.siteName}
-              className="h-14 w-auto object-contain sm:h-16"
-            />
-          </Link>
-          <Link href="/" className="block">
-            <h1 className="mt-2 font-serif text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">
-              {settings.siteName}
-            </h1>
-          </Link>
-          <p className="mt-1 text-sm italic text-muted">{settings.tagline}</p>
-        </div>
+          {/* Top information */}
+          <div className="flex items-center justify-between border-b border-rule py-3 text-[10px] uppercase tracking-[0.18em] text-muted">
+            <span>Student Publication</span>
+            <span>Est. {settings.estYear}</span>
+          </div>
 
-        {showNav && (
-          <nav className="border-t border-rule" aria-label="Main navigation">
-            <div className="flex gap-0 overflow-x-auto scrollbar-none">
-              <Link
-                href="/"
-                className={`nav-link ${!currentCategory && !currentPage ? 'nav-link-active' : ''}`}
+          {/* Main masthead */}
+          <div className="py-6 text-center sm:py-8">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center"
+            >
+              <img
+                src="/logo.png"
+                alt={settings.siteName}
+                className="masthead-logo h-14 w-auto object-contain sm:h-16"
+              />
+            </Link>
+
+            <Link href="/" className="block">
+              <h1 className="mt-2 font-serif text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">
+                {settings.siteName}
+              </h1>
+            </Link>
+
+            <p className="mt-1 text-sm italic text-muted">
+              {settings.tagline}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* =========================================
+          STICKY NAVIGATION
+          ========================================= */}
+      {showNav && (
+        <div className="site-nav-sticky">
+          <div className="mx-auto max-w-6xl px-5 sm:px-8">
+            <nav
+              aria-label="Main navigation"
+              className="site-navigation"
+            >
+              <div
+                ref={navScrollRef}
+                className="site-navigation-inner"
               >
-                All Posts
-              </Link>
-              {settings.categories.map((cat) => (
+                {/* HOME */}
                 <Link
-                  key={cat}
-                  href={`/category/${toSlug(cat)}`}
-                  className={`nav-link ${currentCategory === cat ? 'nav-link-active' : ''}`}
+                  href="/"
+                  className={`nav-link ${
+                    !currentCategory && !currentPage
+                      ? 'nav-link-active'
+                      : ''
+                  }`}
                 >
-                  {cat}
+                  Home
                 </Link>
-              ))}
-              <Link
-                href="/about"
-                className={`nav-link ${currentPage === 'about' ? 'nav-link-active' : ''}`}
-              >
-                About
-              </Link>
-            </div>
-          </nav>
-        )}
-      </div>
-    </header>
+
+                {/* CATEGORIES */}
+                {settings.categories.map((cat) => {
+                  const isActive = currentCategory === cat;
+
+                  return (
+                    <Link
+                      key={cat}
+                      href={`/category/${toSlug(cat)}`}
+                      className={`nav-link ${
+                        isActive
+                          ? 'nav-link-active'
+                          : ''
+                      }`}
+                    >
+                      {cat}
+                    </Link>
+                  );
+                })}
+
+                {/* ABOUT */}
+                <Link
+                  href="/about"
+                  className={`nav-link ${
+                    currentPage === 'about'
+                      ? 'nav-link-active'
+                      : ''
+                  }`}
+                >
+                  About
+                </Link>
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

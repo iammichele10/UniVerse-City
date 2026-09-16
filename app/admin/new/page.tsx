@@ -12,6 +12,7 @@ import {
   LinkMark,
   AutoLinkMark,
   HashtagMark,
+  LineSpacing,
 } from '@/lib/tiptapFormatting';
 
 import { auth } from '@/lib/firebaseAuth';
@@ -71,6 +72,7 @@ function NewPostForm() {
       LinkMark,
       AutoLinkMark,
       HashtagMark,
+      LineSpacing,
     ],
     content: '',
     immediatelyRender: false,
@@ -94,6 +96,8 @@ function NewPostForm() {
     useState(!!editingId);
   const [emojiPickerOpen, setEmojiPickerOpen] =
     useState(false);
+
+  const [lineSpacing, setLineSpacing] = useState('1.6');
 
   // Categories still come from Settings.
   useEffect(() => {
@@ -564,6 +568,36 @@ function NewPostForm() {
 
             <span className="mx-1 h-5 w-px bg-rule" />
 
+            <label className="flex items-center gap-1 px-1 text-xs text-muted">
+              <span className="sr-only">Line spacing</span>
+              <select
+                value={lineSpacing}
+                onChange={(e) => {
+                  const nextSpacing = e.target.value;
+                  setLineSpacing(nextSpacing);
+
+                  editor
+                    ?.chain()
+                    .focus()
+                    .updateAttributes('paragraph', {
+                      lineHeight: nextSpacing,
+                    })
+                    .run();
+                }}
+                className="border border-rule bg-white px-2 py-1 text-xs text-ink outline-none focus:border-brass"
+                title="Line spacing"
+                aria-label="Line spacing"
+              >
+                <option value="1.2">Single</option>
+                <option value="1.5">1.5 lines</option>
+                <option value="1.6">Normal</option>
+                <option value="1.8">Relaxed</option>
+                <option value="2">Double</option>
+              </select>
+            </label>
+
+            <span className="mx-1 h-5 w-px bg-rule" />
+
             <button
               type="button"
               onClick={() =>
@@ -628,13 +662,17 @@ function NewPostForm() {
             )}
           </div>
 
-          <div className="min-h-[240px] overflow-x-auto px-3 py-3 text-sm [&_.tiptap]:min-h-[220px] [&_.tiptap]:outline-none [&_.tiptap_p]:mb-3 [&_.tiptap_h2]:mb-3 [&_.tiptap_h2]:mt-4 [&_.tiptap_h2]:font-serif [&_.tiptap_h2]:text-xl [&_.tiptap_h3]:mb-2 [&_.tiptap_h3]:mt-3 [&_.tiptap_h3]:font-serif [&_.tiptap_h3]:text-lg [&_.tiptap_ul]:mb-3 [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-5 [&_.tiptap_ol]:mb-3 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-5">
+          <div
+            className="min-h-[240px] overflow-x-auto px-3 py-3 text-sm [&_.tiptap]:min-h-[220px] [&_.tiptap]:outline-none [&_.tiptap_p]:mb-3 [&_.tiptap_h2]:mb-3 [&_.tiptap_h2]:mt-4 [&_.tiptap_h2]:font-serif [&_.tiptap_h2]:text-xl [&_.tiptap_h3]:mb-2 [&_.tiptap_h3]:mt-3 [&_.tiptap_h3]:font-serif [&_.tiptap_h3]:text-lg [&_.tiptap_ul]:mb-3 [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-5 [&_.tiptap_ol]:mb-3 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-5"
+            style={{ lineHeight: lineSpacing }}
+          >
             <EditorContent editor={editor} />
           </div>
         </div>
 
         <p className="mt-1 text-[11px] text-muted">
-          Hashtags such as #ManCity
+          Use the line-spacing selector above the editor to adjust
+          the spacing between lines. Hashtags such as #ManCity
           appear blue but are not
           clickable. Website addresses
           such as meta.ai become

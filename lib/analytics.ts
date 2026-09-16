@@ -8,6 +8,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore/lite';
+
 import { db } from './firebase';
 
 export interface DailyView {
