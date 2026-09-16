@@ -4,6 +4,7 @@ import { getSettings } from '@/lib/settings';
 import { Masthead } from '@/lib/Masthead';
 import { formatDate } from '@/lib/date';
 import CopyrightNotice from '@/components/CopyrightNotice';
+import { TrendingNow } from '@/lib/TrendingNow';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,7 @@ export default async function HomePage() {
         <Masthead settings={settings} />
 
         <div className="px-4 py-7 sm:px-6 sm:py-9">
+          <TrendingNow />
           {!lead && <p className="text-muted">No posts yet.</p>}
 
           {lead && (

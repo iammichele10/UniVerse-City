@@ -4,6 +4,7 @@ import { getPostBySlug } from '@/lib/posts';
 import { Comments } from '@/lib/CommentsSection';
 import { LikeButton } from '@/lib/LikeButton';
 import { formatDate } from '@/lib/date';
+import { ViewTracker } from '@/lib/ViewTracker';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,6 +102,7 @@ export default async function PostPage({
 
   return (
     <main className="mx-auto max-w-3xl">
+      <ViewTracker postId={post.id} />
       <article className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-10">
 
         {/* Back to category */}
