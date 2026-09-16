@@ -1,6 +1,9 @@
 import { Extension, Mark, mergeAttributes } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import {
+  Decoration,
+  DecorationSet,
+} from '@tiptap/pm/view';
 
 /**
  * Underline formatting
@@ -20,7 +23,11 @@ export const UnderlineMark = Mark.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['u', mergeAttributes(HTMLAttributes), 0];
+    return [
+      'u',
+      mergeAttributes(HTMLAttributes),
+      0,
+    ];
   },
 });
 
@@ -58,7 +65,8 @@ export const LinkMark = Mark.create({
     return [
       'a',
       mergeAttributes(HTMLAttributes, {
-        class: 'text-blue-600 no-underline',
+        class:
+          'text-blue-600 no-underline',
         target: '_blank',
         rel: 'noopener noreferrer',
       }),
@@ -68,11 +76,23 @@ export const LinkMark = Mark.create({
 });
 
 /**
- * Automatically converts website addresses into clickable links.
+ * Automatically converts website addresses
+ * into clickable links.
+ *
+ * The important part of this implementation is
+ * that it scans the complete text inside each
+ * text block rather than scanning individual
+ * Tiptap text nodes.
  */
 export const AutoLinkMark = Mark.create({
   name: 'autoLink',
 
+  /**
+   * Keep this false.
+   *
+   * This prevents normal text typed after a URL
+   * from inheriting the blue link.
+   */
   inclusive: false,
 
   addAttributes() {
@@ -98,7 +118,8 @@ export const AutoLinkMark = Mark.create({
         'data-auto-link': 'true',
         target: '_blank',
         rel: 'noopener noreferrer',
-        class: 'text-blue-600 no-underline',
+        class:
+          'text-blue-600 no-underline',
       }),
       0,
     ];
@@ -109,7 +130,9 @@ export const AutoLinkMark = Mark.create({
 
     return [
       new Plugin({
-        key: new PluginKey('automaticWebsiteLinks'),
+        key: new PluginKey(
+          'automaticWebsiteLinks'
+        ),
 
         appendTransaction: (
           transactions,
@@ -134,53 +157,173 @@ export const AutoLinkMark = Mark.create({
             return null;
           }
 
-          const transaction = newState.tr;
+          const transaction =
+            newState.tr;
 
+          /**
+           * Complete website matcher.
+           *
+           * Examples:
+           *
+           * laliga.com
+           * www.laliga.com
+           * google.co.uk
+           * https://laliga.com
+           * https://www.laliga.com/news
+           */
+          const websitePattern =
+            /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+(?:\/[^\s<]*)?/g;
+
+          /**
+           * Walk through every text-containing
+           * block in the document.
+           *
+           * Instead of looking at individual text
+           * nodes, combine adjacent inline text.
+           *
+           * This is what fixes:
+           *
+           * laliga.co + m
+           *
+           * becoming:
+           *
+           * laliga.com
+           */
           newState.doc.descendants(
             (node, position) => {
+              /**
+               * We only care about nodes that
+               * contain inline content.
+               */
               if (
-                !node.isText ||
-                !node.text
+                !node.isTextblock ||
+                !node.content.size
               ) {
                 return;
               }
 
-              const websitePattern =
-                /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
+              /**
+               * Collect the text children of this
+               * block and remember their positions.
+               */
+              const pieces: {
+                text: string;
+                start: number;
+                end: number;
+              }[] = [];
 
-              for (const match of node.text.matchAll(
+              let combinedText = '';
+
+              node.forEach(
+                (child, offset) => {
+                  if (
+                    !child.isText ||
+                    !child.text
+                  ) {
+                    return;
+                  }
+
+                  const start =
+                    combinedText.length;
+
+                  combinedText +=
+                    child.text;
+
+                  const end =
+                    combinedText.length;
+
+                  pieces.push({
+                    text: child.text,
+                    start,
+                    end,
+                  });
+                }
+              );
+
+              if (
+                pieces.length === 0 ||
+                !combinedText
+              ) {
+                return;
+              }
+
+              websitePattern.lastIndex = 0;
+
+              for (const match of combinedText.matchAll(
                 websitePattern
               )) {
-                const text = match[0];
-                const index =
+                const website =
+                  match[0];
+
+                const combinedStart =
                   match.index ?? 0;
 
-                const from =
-                  position + index;
-
-                const to =
-                  from + text.length;
+                const combinedEnd =
+                  combinedStart +
+                  website.length;
 
                 const href =
-                  text.startsWith('http')
-                    ? text
-                    : `https://${text}`;
+                  /^https?:\/\//i.test(
+                    website
+                  )
+                    ? website
+                    : `https://${website}`;
 
-                const alreadyLinked =
-                  node.marks.some(
-                    (mark) =>
-                      mark.type ===
-                        markType &&
-                      mark.attrs.href ===
-                        href
-                  );
+                /**
+                 * Convert combined-text
+                 * positions back into absolute
+                 * ProseMirror document positions.
+                 */
+                const absoluteStart =
+                  position +
+                  1 +
+                  combinedStart;
 
-                if (
-                  !alreadyLinked
+                const absoluteEnd =
+                  position +
+                  1 +
+                  combinedEnd;
+
+                /**
+                 * Check whether every character
+                 * in the URL already has the
+                 * correct auto-link mark.
+                 */
+                let alreadyLinked = true;
+
+                for (
+                  let pos =
+                    absoluteStart;
+                  pos < absoluteEnd;
+                  pos++
                 ) {
+                  const resolved =
+                    newState.doc.resolve(
+                      pos
+                    );
+
+                  const hasMark =
+                    resolved
+                      .marks()
+                      .some(
+                        (mark) =>
+                          mark.type ===
+                            markType &&
+                          mark.attrs.href ===
+                            href
+                      );
+
+                  if (!hasMark) {
+                    alreadyLinked =
+                      false;
+                    break;
+                  }
+                }
+
+                if (!alreadyLinked) {
                   transaction.addMark(
-                    from,
-                    to,
+                    absoluteStart,
+                    absoluteEnd,
                     markType.create({
                       href,
                     })
