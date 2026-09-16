@@ -17,44 +17,58 @@ export function Masthead({
   showNav?: boolean;
 }) {
   return (
-    <header className="border-b-[3px] border-double border-ink px-4 pb-4 pt-6 text-center sm:px-6 sm:pt-8">
-      <Link href="/" className="mx-auto mb-3 flex h-16 w-fit justify-center sm:h-20">
-        <img src="/logo.png" alt={settings.siteName} className="h-full w-auto object-contain" />
-      </Link>
-      <div className="mb-2 text-xs tracking-wide text-muted">
-        Est. {settings.estYear} · Vol. 1
+    <header className="site-masthead">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="flex items-center justify-between border-b border-rule py-3 text-[10px] uppercase tracking-[0.18em] text-muted">
+          <span className="hidden sm:block">Student publication</span>
+          <span className="sm:hidden">UniVerse-City</span>
+          <span>Est. {settings.estYear}</span>
+        </div>
+
+        <div className="py-6 text-center sm:py-8">
+          <Link href="/" className="inline-flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt={settings.siteName}
+              className="h-14 w-auto object-contain sm:h-16"
+            />
+          </Link>
+          <Link href="/" className="block">
+            <h1 className="mt-2 font-serif text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">
+              {settings.siteName}
+            </h1>
+          </Link>
+          <p className="mt-1 text-sm italic text-muted">{settings.tagline}</p>
+        </div>
+
+        {showNav && (
+          <nav className="border-t border-rule" aria-label="Main navigation">
+            <div className="flex gap-0 overflow-x-auto scrollbar-none">
+              <Link
+                href="/"
+                className={`nav-link ${!currentCategory && !currentPage ? 'nav-link-active' : ''}`}
+              >
+                All Posts
+              </Link>
+              {settings.categories.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/category/${toSlug(cat)}`}
+                  className={`nav-link ${currentCategory === cat ? 'nav-link-active' : ''}`}
+                >
+                  {cat}
+                </Link>
+              ))}
+              <Link
+                href="/about"
+                className={`nav-link ${currentPage === 'about' ? 'nav-link-active' : ''}`}
+              >
+                About
+              </Link>
+            </div>
+          </nav>
+        )}
       </div>
-      <Link href="/">
-        <h1 className="mb-1 font-serif text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          {settings.siteName}
-        </h1>
-      </Link>
-      <div className="text-sm italic text-muted">{settings.tagline}</div>
-      {showNav && (
-        <nav className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-rule pt-3 text-sm">
-          <Link
-            href="/"
-            className={`pb-0.5 ${!currentCategory && !currentPage ? 'border-b-2 border-brass' : ''}`}
-          >
-            All Posts
-          </Link>
-          {settings.categories.map((cat) => (
-            <Link
-              key={cat}
-              href={`/category/${toSlug(cat)}`}
-              className={`pb-0.5 ${currentCategory === cat ? 'border-b-2 border-brass' : ''}`}
-            >
-              {cat}
-            </Link>
-          ))}
-          <Link
-            href="/about"
-            className={`pb-0.5 ${currentPage === 'about' ? 'border-b-2 border-brass' : ''}`}
-          >
-            About
-          </Link>
-        </nav>
-      )}
     </header>
   );
 }

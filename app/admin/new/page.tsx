@@ -379,7 +379,7 @@ function NewPostForm() {
   }
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="w-full max-w-2xl space-y-4">
       <h1 className="text-lg font-semibold">
         {editingId
           ? 'Edit Post'
@@ -392,7 +392,7 @@ function NewPostForm() {
         onChange={(e) =>
           setTitle(e.target.value)
         }
-        className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm"
+        className="form-field"
       />
 
       <input
@@ -401,7 +401,7 @@ function NewPostForm() {
         onChange={(e) =>
           setExcerpt(e.target.value)
         }
-        className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm"
+        className="form-field"
       />
 
       <div>
@@ -409,8 +409,8 @@ function NewPostForm() {
           Body
         </label>
 
-        <div className="overflow-hidden rounded-md border border-rule bg-white">
-          <div className="relative flex flex-wrap items-center gap-1 border-b border-rule bg-paper-raised p-2">
+        <div className="overflow-hidden rounded-sm border border-rule bg-white">
+          <div className="relative flex flex-wrap items-center gap-1 border-b border-rule bg-white p-2">
             <button
               type="button"
               onClick={() =>
@@ -422,8 +422,8 @@ function NewPostForm() {
               }
               className={`rounded px-2 py-1 text-sm ${
                 editor?.isActive('bold')
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
               title="Bold"
             >
@@ -441,8 +441,8 @@ function NewPostForm() {
               }
               className={`rounded px-2 py-1 text-sm ${
                 editor?.isActive('italic')
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
               title="Italic"
             >
@@ -464,8 +464,8 @@ function NewPostForm() {
                 editor?.isActive(
                   'underline'
                 )
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
               title="Underline"
             >
@@ -490,8 +490,8 @@ function NewPostForm() {
                   'heading',
                   { level: 2 }
                 )
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
             >
               H2
@@ -513,8 +513,8 @@ function NewPostForm() {
                   'heading',
                   { level: 3 }
                 )
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
             >
               H3
@@ -533,8 +533,8 @@ function NewPostForm() {
                 editor?.isActive(
                   'bulletList'
                 )
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
               title="Bulleted list"
             >
@@ -554,8 +554,8 @@ function NewPostForm() {
                 editor?.isActive(
                   'orderedList'
                 )
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
               title="Numbered list"
             >
@@ -573,8 +573,8 @@ function NewPostForm() {
               }
               className={`rounded px-2 py-1 text-base ${
                 emojiPickerOpen
-                  ? 'bg-navy text-white'
-                  : 'hover:bg-white'
+                  ? 'bg-ink text-paper'
+                  : 'hover:bg-[#f3f3f1]'
               }`}
               title="Emoji"
               aria-label="Open emoji picker"
@@ -595,7 +595,7 @@ function NewPostForm() {
                   sm:translate-x-0
                 "
               >
-                <div className="max-w-[calc(100vw-24px)] overflow-hidden rounded-lg shadow-lg">
+                <div className="max-w-[calc(100vw-24px)] overflow-hidden rounded-sm shadow-lg">
                   <EmojiPicker
                     onEmojiClick={(
                       emojiData: EmojiClickData
@@ -628,7 +628,7 @@ function NewPostForm() {
             )}
           </div>
 
-          <div className="min-h-[240px] px-3 py-3 text-sm [&_.tiptap]:min-h-[220px] [&_.tiptap]:outline-none [&_.tiptap_p]:mb-3 [&_.tiptap_h2]:mb-3 [&_.tiptap_h2]:mt-4 [&_.tiptap_h2]:font-serif [&_.tiptap_h2]:text-xl [&_.tiptap_h3]:mb-2 [&_.tiptap_h3]:mt-3 [&_.tiptap_h3]:font-serif [&_.tiptap_h3]:text-lg [&_.tiptap_ul]:mb-3 [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-5 [&_.tiptap_ol]:mb-3 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-5">
+          <div className="min-h-[240px] overflow-x-auto px-3 py-3 text-sm [&_.tiptap]:min-h-[220px] [&_.tiptap]:outline-none [&_.tiptap_p]:mb-3 [&_.tiptap_h2]:mb-3 [&_.tiptap_h2]:mt-4 [&_.tiptap_h2]:font-serif [&_.tiptap_h2]:text-xl [&_.tiptap_h3]:mb-2 [&_.tiptap_h3]:mt-3 [&_.tiptap_h3]:font-serif [&_.tiptap_h3]:text-lg [&_.tiptap_ul]:mb-3 [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-5 [&_.tiptap_ol]:mb-3 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-5">
             <EditorContent editor={editor} />
           </div>
         </div>
@@ -651,7 +651,7 @@ function NewPostForm() {
           onChange={(e) =>
             setCategory(e.target.value)
           }
-          className="rounded-md border border-rule bg-white px-3 py-2 text-sm sm:flex-1"
+          className="form-field sm:flex-1"
         >
           {categories.map((c) => (
             <option
@@ -669,7 +669,7 @@ function NewPostForm() {
           onChange={(e) =>
             setTags(e.target.value)
           }
-          className="rounded-md border border-rule bg-white px-3 py-2 text-sm sm:flex-1"
+          className="form-field sm:flex-1"
         />
       </div>
 
@@ -715,11 +715,11 @@ function NewPostForm() {
               e.target.value
             )
           }
-          className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm"
+          className="form-field"
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
         <select
           value={status}
           onChange={(e) =>
@@ -727,7 +727,7 @@ function NewPostForm() {
               e.target.value as PostStatus
             )
           }
-          className="rounded-md border border-rule bg-white px-3 py-2 text-sm"
+          className="form-field"
         >
           <option value="draft">
             Draft
@@ -749,7 +749,7 @@ function NewPostForm() {
                 e.target.value
               )
             }
-            className="rounded-md border border-rule bg-white px-3 py-2 text-sm"
+            className="form-field"
           />
         )}
       </div>
@@ -761,7 +761,7 @@ function NewPostForm() {
           !title ||
           !authorName
         }
-        className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="w-full border border-ink bg-ink px-4 py-3 text-sm font-medium text-paper hover:bg-[#343934] disabled:opacity-50 sm:w-auto sm:py-2"
       >
         {saving
           ? 'Saving…'

@@ -2,26 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+}
+
+html {
+  background: #ffffff;
+}
+
 body {
-  color: #1E2320;
+  margin: 0;
+  background: #ffffff;
+  color: #1e2320;
+  overflow-x: hidden;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+::selection {
+  background: #d9cfb4;
+  color: #1e2320;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.site-masthead {
+  background: #ffffff;
+}
+
+.nav-link {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 12px 15px 11px;
+  border-bottom: 2px solid transparent;
+  color: #555a54;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.nav-link:first-child {
+  padding-left: 0;
+}
+
+.nav-link:hover {
+  color: #1e2320;
+}
+
+.nav-link-active {
+  color: #1e2320;
+  border-bottom-color: #a9813f;
+}
+
+.editorial-rule {
+  border-color: #d8d4c8;
+}
+
+.editorial-link {
+  color: #1f3a5f;
+  text-decoration: underline;
+  text-decoration-color: #a9813f;
+  text-underline-offset: 3px;
+}
+
+.editorial-link:hover {
+  color: #172d48;
+}
+
+.form-field {
+  width: 100%;
+  border: 1px solid #d8d4c8;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e2320;
+  padding: 10px 11px;
+  font-size: 14px;
+  outline: none;
+}
+
+.form-field:focus {
+  border-color: #a9813f;
+  box-shadow: 0 0 0 1px #a9813f;
 }
 
 @keyframes like-pop {
-  0% {
-    transform: scale(1);
-  }
-
-  40% {
-    transform: scale(1.35);
-  }
-
-  70% {
-    transform: scale(0.9);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
 }
 
 .animate-like-pop {
@@ -29,7 +116,41 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-like-pop {
-    animation: none;
+  .animate-like-pop { animation: none; }
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
+
+.post-body h2 {
+  margin-top: 2rem;
+  margin-bottom: .75rem;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.post-body h3 {
+  margin-top: 1.5rem;
+  margin-bottom: .6rem;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+
+.post-body p { margin: 0 0 1.1rem; }
+.post-body ul { margin: 0 0 1.1rem; padding-left: 1.3rem; list-style: disc; }
+.post-body ol { margin: 0 0 1.1rem; padding-left: 1.3rem; list-style: decimal; }
+.post-body a { color: #1f3a5f; text-decoration: underline; text-underline-offset: 3px; }
+.post-body .hashtag-blue { color: #2563eb !important; text-decoration: none !important; }
+
+
+/* Mobile safety for the publication desk */
+@media (max-width: 639px) {
+  input, textarea, select, button {
+    max-width: 100%;
+  }
+
+  .post-body img, .tiptap img {
+    max-width: 100%;
+    height: auto;
   }
 }

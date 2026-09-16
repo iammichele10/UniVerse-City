@@ -1,25 +1,26 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
+  increment,
   orderBy,
   query,
   setDoc,
   where,
-  type DocumentData,
 } from 'firebase/firestore/lite';
-
 import { db } from './firebase';
 
-export type DailyView = {
-  id?: string;
+export interface DailyView {
+  id: string;
   postId: string;
   date: string;
   views: number;
-};
+}
 
-function toDailyView(id: string, data: DocumentData): DailyView {
+function toDailyView(
+  id: string,
+  data: Record<string, unknown>
+): DailyView {
   return {
     id,
     postId: typeof data.postId === 'string' ? data.postId : '',
@@ -28,47 +29,27 @@ function toDailyView(id: string, data: DocumentData): DailyView {
   };
 }
 
-/**
- * Records one view for a post in today's dailyViews document.
- */
-export async function recordPostView(postId: string): Promise<void> {
-  if (!postId.trim()) return;
-
+export async function recordPostView(postId: string) {
   const date = new Date().toISOString().slice(0, 10);
-  const viewId = `${postId}_${date}`;
-  const viewRef = doc(db, 'dailyViews', viewId);
+  const id = `${postId}_${date}`;
 
-  const existing = await getDoc(viewRef);
+  const ref = doc(db, 'dailyViews', id);
 
-  if (existing.exists()) {
-    const currentViews = Number(existing.data().views || 0);
-
-    await setDoc(
-      viewRef,
-      {
-        postId,
-        date,
-        views: currentViews + 1,
-      },
-      { merge: true }
-    );
-  } else {
-    await setDoc(viewRef, {
+  await setDoc(
+    ref,
+    {
       postId,
       date,
-      views: 1,
-    });
-  }
+      views: increment(1),
+    },
+    { merge: true }
+  );
 }
 
-/**
- * Gets daily views from the last specified number of days.
- */
 export async function getRecentDailyViews(
   days = 7
 ): Promise<DailyView[]> {
   const sinceDate = new Date();
-
   sinceDate.setDate(sinceDate.getDate() - (days - 1));
 
   const since = sinceDate.toISOString().slice(0, 10);
@@ -81,29 +62,14 @@ export async function getRecentDailyViews(
 
   const snap = await getDocs(q);
 
-  return snap.docs.map((item) => toDailyView(item.id, item.data()));
-}
-
-/**
- * Gets daily views from a specified date.
- */
-export async function getDailyViewsSince(
-  since: string
-): Promise<DailyView[]> {
-  const q = query(
-    collection(db, 'dailyViews'),
-    where('date', '>=', since),
-    orderBy('date', 'asc')
+  return snap.docs.map((item) =>
+    toDailyView(
+      item.id,
+      item.data() as Record<string, unknown>
+    )
   );
-
-  const snap = await getDocs(q);
-
-  return snap.docs.map((item) => toDailyView(item.id, item.data()));
 }
 
-/**
- * Gets all daily view records.
- */
 export async function getAllDailyViews(): Promise<DailyView[]> {
   const q = query(
     collection(db, 'dailyViews'),
@@ -112,5 +78,10 @@ export async function getAllDailyViews(): Promise<DailyView[]> {
 
   const snap = await getDocs(q);
 
-  return snap.docs.map((item) => toDailyView(item.id, item.data()));
+  return snap.docs.map((item) =>
+    toDailyView(
+      item.id,
+      item.data() as Record<string, unknown>
+    )
+  );
 }

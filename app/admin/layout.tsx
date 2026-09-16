@@ -1,9 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { User } from 'firebase/auth';
+import { usePathname, useRouter } from 'next/navigation';
+import type { User } from 'firebase/auth';
 import { watchAdminAuth, isEmailAdmin, signOutAdmin } from '@/lib/adminAuth';
+
+const nav = [
+  { href: '/admin', label: 'Posts' },
+  { href: '/admin/analytics', label: 'Analytics' },
+  { href: '/admin/comments', label: 'Comments' },
+  { href: '/admin/settings', label: 'Settings' },
+];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -17,8 +24,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setChecked(true);
         return;
       }
-      if (!u || !u.email || !(await isEmailAdmin(u.email))) {
-        router.push('/admin/login');
+      if (!u?.email || !(await isEmailAdmin(u.email))) {
+        router.replace('/admin/login');
         return;
       }
       setUser(u);
@@ -27,33 +34,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => unsub();
   }, [pathname, router]);
 
-  if (!checked) return <div className="p-8 font-sans text-sm text-muted">Checking access…</div>;
-
+  if (!checked) return <div className="min-h-screen bg-white p-6 text-sm text-muted">Checking access…</div>;
   if (pathname === '/admin/login') return <>{children}</>;
 
   const initials = (user?.displayName || user?.email || '?').slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-paper font-sans">
-      <header className="flex flex-wrap items-center justify-between gap-y-2 border-b border-rule bg-paper-raised px-4 py-3 sm:px-6 sm:py-3.5">
-        <span className="text-sm font-semibold">UniVerse-City — Admin</span>
-        <div className="flex items-center gap-2.5 text-sm text-muted sm:gap-3">
-          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-semibold text-white">
-            {initials}
+    <div className="min-h-screen overflow-x-hidden bg-white text-ink">
+      <header className="border-b border-ink bg-white-raised">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
+          <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 py-3 sm:flex-nowrap sm:py-0">
+            <div>
+              <a href="/admin" className="font-serif text-xl font-semibold tracking-[-0.02em]">UniVerse-City</a>
+              <span className="ml-1 text-[10px] uppercase tracking-[0.16em] text-muted sm:ml-2">Admin</span>
+            </div>
+            <div className="flex max-w-full items-center gap-2 text-xs text-muted sm:gap-3">
+              <span className="hidden max-w-[260px] truncate sm:block">{user?.email}</span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-rule bg-white font-semibold text-navy">{initials}</span>
+              <button onClick={() => signOutAdmin().then(() => router.push('/admin/login'))} className="editorial-link shrink-0 text-xs">Sign out</button>
+            </div>
           </div>
-          <span className="hidden sm:inline">{user?.email}</span>
-          <a href="/admin/analytics" className="whitespace-nowrap text-navy underline">Analytics</a>
-          <a href="/admin/comments" className="whitespace-nowrap text-navy underline">Comments</a>
-          <a href="/admin/settings" className="whitespace-nowrap text-navy underline">Settings</a>
-          <button
-            onClick={() => signOutAdmin().then(() => router.push('/admin/login'))}
-            className="whitespace-nowrap text-muted underline"
-          >
-            Sign out
-          </button>
+          <nav className="flex gap-0 overflow-x-auto border-t border-rule scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0" aria-label="Admin navigation">
+            {nav.map((item) => (
+              <a key={item.href} href={item.href} className={`nav-link ${pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href)) ? 'nav-link-active' : ''}`}>
+                {item.label}
+              </a>
+            ))}
+          </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-4xl p-4 sm:p-6">{children}</main>
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-9">{children}</main>
     </div>
   );
 }

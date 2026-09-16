@@ -7,8 +7,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        paper: '#F6F4EC',
-        'paper-raised': '#FBFAF5',
+        paper: '#FFFFFF',
+        'paper-raised': '#FFFFFF',
         ink: '#1E2320',
         navy: '#1F3A5F',
         brass: '#A9813F',

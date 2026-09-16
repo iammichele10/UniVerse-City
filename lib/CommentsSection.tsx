@@ -103,7 +103,7 @@ export function Comments({
         <div className="mb-5 space-y-4">
           {comments.map((c) => (
             <div key={c.id} className="flex gap-3">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-brass text-xs font-semibold text-white">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center border border-rule bg-paper-raised text-xs font-semibold text-navy">
                 {initialsFor(c.authorName)}
               </div>
               <div className="min-w-0 flex-1">
@@ -134,7 +134,7 @@ export function Comments({
 
       {!authChecked ? null : user ? (
         <div className="flex gap-3">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center border border-rule bg-paper-raised text-xs font-semibold text-navy">
             {initialsFor(user.displayName || user.email || '?')}
           </div>
           <div className="flex-1">
@@ -144,13 +144,13 @@ export function Comments({
               placeholder="Add a comment…"
               rows={2}
               maxLength={1000}
-              className="w-full rounded-md border border-rule bg-paper-raised px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-rule bg-paper-raised px-3 py-2 text-sm"
             />
             <div className="mt-1.5 text-right">
               <button
                 onClick={handlePost}
                 disabled={posting || !text.trim()}
-                className="rounded-md bg-brass px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                className="border border-ink bg-ink px-4 py-1.5 text-xs font-semibold text-paper hover:bg-[#343934] disabled:opacity-50"
               >
                 {posting ? 'Posting…' : 'Post'}
               </button>
@@ -158,11 +158,11 @@ export function Comments({
           </div>
         </div>
       ) : (
-        <div className="rounded-md border border-rule bg-paper-raised p-4 text-center">
+        <div className="rounded-sm border border-rule bg-paper-raised p-4 text-center">
           <p className="mb-2.5 text-sm text-muted">Sign in to join the conversation</p>
           <button
             onClick={handleSignIn}
-            className="rounded-md bg-navy px-4 py-2 text-xs font-semibold text-white"
+            className="border border-ink bg-ink px-4 py-2 text-xs font-semibold text-paper hover:bg-[#343934]"
           >
             Sign in with Google
           </button>
