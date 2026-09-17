@@ -50,21 +50,12 @@ export function Masthead({
       const scrollPosition = Number(savedPosition);
 
       if (Number.isFinite(scrollPosition)) {
-        /*
-         * Restore after the navigation has rendered.
-         * Instant restoration is intentional — there should
-         * be no visible movement caused by the page change.
-         */
         requestAnimationFrame(() => {
           container.scrollLeft = scrollPosition;
         });
       }
     }
 
-    /*
-     * Save the position whenever the user actually scrolls
-     * or swipes the navigation.
-     */
     const handleScroll = () => {
       sessionStorage.setItem(
         NAV_SCROLL_KEY,
@@ -84,9 +75,6 @@ export function Masthead({
   /*
    * Save the latest position immediately before the current
    * page is left.
-   *
-   * This makes sure the position survives a navigation even
-   * if the final scroll event has not finished firing yet.
    */
   useEffect(() => {
     const container = navScrollRef.current;
@@ -129,9 +117,14 @@ export function Masthead({
 
           {/* Main masthead */}
           <div className="py-6 text-center sm:py-8">
+            {/* SECRET ADMIN SHORTCUT:
+                Clicking the logo opens the admin area.
+                The visible UniVerse-City title below
+                still returns to the public homepage. */}
             <Link
-              href="/"
+              href="/admin"
               className="inline-flex items-center justify-center"
+              aria-label="UniVerse-City"
             >
               <img
                 src="/logo.png"
@@ -140,6 +133,7 @@ export function Masthead({
               />
             </Link>
 
+            {/* Public homepage link */}
             <Link href="/" className="block">
               <h1 className="mt-2 font-serif text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">
                 {settings.siteName}

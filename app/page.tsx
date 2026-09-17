@@ -27,7 +27,7 @@ export default async function HomePage() {
   };
 
   const secondary = rest.slice(0, 6);
-  const more = rest.slice(6);
+  const more = rest.slice(6, 9);
 
   return (
     <>
