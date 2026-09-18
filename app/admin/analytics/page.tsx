@@ -6,29 +6,93 @@ import { getAllDailyViews, type DailyView } from '@/lib/analytics';
 
 export default function AnalyticsPage() {
   const [rows, setRows] = useState<DailyView[]>([]);
-  const [posts, setPosts] = useState<{ id: string; title: string; slug: string }[]>([]);
+  const [posts, setPosts] = useState<
+    { id: string; title: string; slug: string }[]
+  >([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([getAllDailyViews(), getPublishedPosts()]).then(([views, published]) => {
-      setRows(views); setPosts(published.map((p) => ({ id: p.id, title: p.title, slug: p.slug })));
-    }).catch((e) => setError(e instanceof Error ? e.message : String(e)));
+    Promise.all([getAllDailyViews(), getPublishedPosts()])
+      .then(([views, published]) => {
+        const currentPosts = published.map((p) => ({
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+        }));
+
+        setRows(views);
+        setPosts(currentPosts);
+      })
+      .catch((e) =>
+        setError(e instanceof Error ? e.message : String(e))
+      );
   }, []);
 
-  const total = rows.reduce((sum, row) => sum + Number(row.views || 0), 0);
-  const recent = rows.filter((row) => row.date >= new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10)).reduce((sum, row) => sum + Number(row.views || 0), 0);
+  /*
+   * Only keep view records belonging to posts that currently exist.
+   *
+   * This prevents deleted posts from appearing in Analytics with
+   * their old Firebase document IDs.
+   */
+  const currentPostIds = useMemo(
+    () => new Set(posts.map((post) => post.id)),
+    [posts]
+  );
+
+  const validRows = useMemo(
+    () => rows.filter((row) => currentPostIds.has(row.postId)),
+    [rows, currentPostIds]
+  );
+
+  const total = validRows.reduce(
+    (sum, row) => sum + Number(row.views || 0),
+    0
+  );
+
+  const recent = validRows
+    .filter(
+      (row) =>
+        row.date >=
+        new Date(Date.now() - 6 * 86400000)
+          .toISOString()
+          .slice(0, 10)
+    )
+    .reduce((sum, row) => sum + Number(row.views || 0), 0);
+
   const byPost = useMemo(() => {
     const map = new Map<string, number>();
-    rows.forEach((row) => map.set(row.postId, (map.get(row.postId) || 0) + Number(row.views || 0)));
-    return [...map.entries()].map(([postId, views]) => ({ postId, views, post: posts.find((p) => p.id === postId) })).sort((a, b) => b.views - a.views);
-  }, [rows, posts]);
+
+    validRows.forEach((row) => {
+      map.set(
+        row.postId,
+        (map.get(row.postId) || 0) + Number(row.views || 0)
+      );
+    });
+
+    return [...map.entries()]
+      .map(([postId, views]) => ({
+        postId,
+        views,
+        post: posts.find((p) => p.id === postId),
+      }))
+      .filter((item) => item.post)
+      .sort((a, b) => b.views - a.views);
+  }, [validRows, posts]);
 
   return (
     <div>
       <div className="border-b border-ink pb-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brass">Audience</p>
-        <h1 className="mt-1 font-serif text-3xl sm:text-4xl">Analytics</h1>
-        <p className="mt-2 text-sm text-muted">A simple view of readership recorded by the site.</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brass">
+          Audience
+        </p>
+
+        <h1 className="mt-1 font-serif text-3xl sm:text-4xl">
+          Analytics
+        </h1>
+
+        <p className="mt-2 text-sm text-muted">
+          A simple view of readership recorded by the site.
+        </p>
       </div>
 
       {error && (
@@ -39,46 +103,73 @@ export default function AnalyticsPage() {
 
       <div className="mt-7 grid border-y border-rule sm:grid-cols-2">
         <div className="border-b border-rule px-1 py-5 sm:border-b-0 sm:border-r">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-muted">All recorded views</p>
-          <p className="mt-1 font-serif text-3xl sm:text-4xl">{total}</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted">
+            All recorded views
+          </p>
+
+          <p className="mt-1 font-serif text-3xl sm:text-4xl">
+            {total}
+          </p>
         </div>
+
         <div className="px-1 py-5">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-muted">Last 7 days</p>
-          <p className="mt-1 font-serif text-3xl sm:text-4xl">{recent}</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted">
+            Last 7 days
+          </p>
+
+          <p className="mt-1 font-serif text-3xl sm:text-4xl">
+            {recent}
+          </p>
         </div>
       </div>
 
       <section className="mt-9">
         <div className="mb-4 border-b border-rule pb-2">
-          <h2 className="font-serif text-2xl">Views by post</h2>
+          <h2 className="font-serif text-2xl">
+            Views by post
+          </h2>
         </div>
 
-        {/* Mobile: each post gets its own row so the title and number are visible together. */}
+        {/* Mobile */}
         <div className="divide-y divide-rule border-y border-rule md:hidden">
           {byPost.map(({ postId, views, post }) => (
-            <div key={postId} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-4">
+            <div
+              key={postId}
+              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-4"
+            >
               <div className="min-w-0">
-                <p className="font-serif text-lg leading-snug break-words">
-                  {post?.title ?? postId}
+                <p className="break-words font-serif text-lg leading-snug">
+                  {post!.title}
                 </p>
-                {post?.slug && (
-                  <a href={`/posts/${post.slug}`} className="editorial-link mt-2 inline-block text-xs">
-                    View post
-                  </a>
-                )}
+
+                <a
+                  href={`/posts/${post!.slug}`}
+                  className="editorial-link mt-2 inline-block text-xs"
+                >
+                  View post
+                </a>
               </div>
+
               <div className="self-start text-right">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Views</p>
-                <p className="mt-0.5 font-serif text-2xl leading-none">{views}</p>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-muted">
+                  Views
+                </p>
+
+                <p className="mt-0.5 font-serif text-2xl leading-none">
+                  {views}
+                </p>
               </div>
             </div>
           ))}
+
           {byPost.length === 0 && (
-            <p className="py-8 text-sm text-muted">No view data yet.</p>
+            <p className="py-8 text-sm text-muted">
+              No view data yet.
+            </p>
           )}
         </div>
 
-        {/* Desktop: keep the clean table layout. */}
+        {/* Desktop */}
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-sm">
             <thead>
@@ -88,21 +179,40 @@ export default function AnalyticsPage() {
                 <th>Open</th>
               </tr>
             </thead>
+
             <tbody>
               {byPost.map(({ postId, views, post }) => (
-                <tr key={postId} className="border-b border-rule">
-                  <td className="py-4 pr-4 font-serif text-lg">{post?.title ?? postId}</td>
-                  <td className="pr-4">{views}</td>
+                <tr
+                  key={postId}
+                  className="border-b border-rule"
+                >
+                  <td className="py-4 pr-4 font-serif text-lg">
+                    {post!.title}
+                  </td>
+
+                  <td className="pr-4">
+                    {views}
+                  </td>
+
                   <td>
-                    {post?.slug ? (
-                      <a href={`/posts/${post.slug}`} className="editorial-link text-xs">View</a>
-                    ) : '—'}
+                    <a
+                      href={`/posts/${post!.slug}`}
+                      className="editorial-link text-xs"
+                    >
+                      View
+                    </a>
                   </td>
                 </tr>
               ))}
+
               {byPost.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-8 text-muted">No view data yet.</td>
+                  <td
+                    colSpan={3}
+                    className="py-8 text-muted"
+                  >
+                    No view data yet.
+                  </td>
                 </tr>
               )}
             </tbody>
