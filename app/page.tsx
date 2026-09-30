@@ -198,6 +198,53 @@ export default async function HomePage() {
           )}
         </div>
 
+        {/* Student Submissions */}
+        <section className="border-t border-rule">
+          <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-14">
+            <div className="border-y border-ink py-9 sm:py-11">
+              <div className="mx-auto max-w-3xl text-center">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brass">
+                  Student submissions
+                </div>
+
+                <h2 className="mt-3 font-serif text-3xl leading-tight tracking-[-0.025em] sm:text-4xl">
+                  Have something to say?
+                </h2>
+
+                <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-7 text-[#484c46] sm:text-base">
+                  Share your story, opinion, poem, article, idea, or experience
+                  with UniVerse-City.
+                </p>
+
+                <div className="mt-6">
+                  <p className="text-xs uppercase tracking-[0.14em] text-muted">
+                    Send your submission to
+                  </p>
+
+                  <a
+                    href="mailto:submit@universecityhub.com"
+                    className="mt-2 inline-block max-w-full break-all font-serif text-xl text-navy underline decoration-brass underline-offset-4 transition-opacity hover:opacity-70 sm:text-2xl"
+                  >
+                    submit@universecityhub.com
+                  </a>
+                </div>
+
+                <div className="mx-auto mt-7 max-w-2xl border-t border-rule pt-5 text-left">
+                  <p className="text-sm leading-6 text-muted">
+                    <span className="font-semibold text-[#484c46]">
+                      Submission note:
+                    </span>{' '}
+                    Attach your blog as a Word document (.doc or .docx) and
+                    include one image. In the email, briefly explain what your
+                    blog is about. Please remember to add a clear title in the
+                    subject line.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <CopyrightNotice />
       </main>
     </>
